@@ -3,40 +3,381 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>语音报时倒计时</title>
-
+  <title>VEX 语音报时计时器</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
+    :root{
+      --bg:#0b0f14;
+      --panel:#121824;
+      --panel2:#0f1520;
+      --text:#e8eefc;
+      --muted:#98a6c6;
+      --vex-red:#e11919;
+      --vex-red2:#ff2a2a;
+      --border:rgba(255,255,255,0.08);
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --radius:18px;
     }
-    button {
-      font-size: 18px;
-      margin: 10px;
-      padding: 10px 20px;
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(225,25,25,.14), transparent 60%),
+        radial-gradient(900px 500px at 90% 20%, rgba(255,42,42,.10), transparent 60%),
+        linear-gradient(180deg, #070a0f 0%, var(--bg) 45%, #070a0f 100%);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px 18px;
     }
-    #time {
-      font-size: 48px;
-      margin-top: 30px;
+
+    .app{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap:18px;
+    }
+
+    @media (max-width: 860px){
+      .app{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .header{
+      padding:16px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: linear-gradient(90deg, rgba(225,25,25,.14), transparent 55%);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .badge{
+      width:36px; height:36px;
+      border-radius:10px;
+      background:
+        linear-gradient(135deg, rgba(225,25,25,.85), rgba(255,42,42,.55));
+      box-shadow: 0 10px 30px rgba(225,25,25,.25);
+      position:relative;
+      flex: 0 0 auto;
+    }
+    .badge:before{
+      content:"V";
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      letter-spacing:.02em;
+      color:#fff;
+      font-size:18px;
+      opacity:.95;
+    }
+
+    .titlewrap{ min-width:0; }
+    .title{
+      margin:0;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .subtitle{
+      margin:2px 0 0 0;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .statuspill{
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background: rgba(18,24,36,.55);
+      flex: 0 0 auto;
+    }
+    .dot{
+      width:8px; height:8px;
+      border-radius:999px;
+      background: rgba(152,166,198,.6);
+    }
+    .dot.live{ background: var(--vex-red2); box-shadow: 0 0 0 4px rgba(225,25,25,.18); }
+
+    .main{
+      padding:20px 18px 18px;
+    }
+
+    .timebox{
+      background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      padding:18px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .timebox:before{
+      content:"";
+      position:absolute;
+      inset:-40px -60px auto auto;
+      width:220px; height:220px;
+      background: radial-gradient(circle at 30% 30%, rgba(225,25,25,.30), transparent 60%);
+      transform: rotate(20deg);
+    }
+    #time{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: clamp(54px, 7vw, 84px);
+      font-weight:900;
+      letter-spacing:.04em;
+      position:relative;
+      z-index:1;
+    }
+
+    .controls{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--border);
+      background: rgba(18,24,36,.6);
+      color: var(--text);
+      padding:12px 12px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(18,24,36,.85); border-color: rgba(255,255,255,.14); }
+    .btn:active{ transform: translateY(1px); }
+
+    .btn.primary{
+      border-color: rgba(225,25,25,.35);
+      background: linear-gradient(135deg, rgba(225,25,25,.85), rgba(255,42,42,.55));
+      box-shadow: 0 10px 28px rgba(225,25,25,.16);
+    }
+    .btn.primary:hover{ border-color: rgba(225,25,25,.55); }
+
+    .btn.ghost{
+      background: rgba(0,0,0,.18);
+    }
+
+    .btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .panel{
+      padding:18px;
+    }
+
+    .sectiontitle{
+      margin:0 0 10px 0;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color: var(--muted);
+      font-weight:800;
+    }
+
+    .rule{
+      padding:12px 12px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background: rgba(15,21,32,.55);
+      margin-bottom:10px;
+    }
+    .rule h3{
+      margin:0 0 6px 0;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+    .rule ul{
+      margin:0;
+      padding-left:18px;
+      color: var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    .minirow{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+    }
+    .minirow .btn{ width:100%; }
+
+    .footnote{
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      margin-top:10px;
+    }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border:1px solid var(--border);
+      border-bottom-color: rgba(255,255,255,.18);
+      border-radius:8px;
+      background: rgba(0,0,0,.18);
+      color: var(--text);
     }
   </style>
 </head>
 
 <body>
+  <div class="app">
+    <!-- Left: timer + buttons -->
+    <div class="card">
+      <div class="header">
+        <div class="brand">
+          <div class="badge" aria-hidden="true"></div>
+          <div class="titlewrap">
+            <p class="title">VEX TIMER</p>
+            <p class="subtitle">语音报时 · 训练/比赛用</p>
+          </div>
+        </div>
+        <div class="statuspill" id="statusPill">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">Idle</span>
+        </div>
+      </div>
 
-  <h1>语音报时倒计时</h1>
+      <div class="main">
+        <div class="timebox">
+          <div id="time">0:00</div>
+        </div>
 
-  <button onclick="mode1()">模式一：1分钟报时</button>
-  <button onclick="mode2Prep()">模式二：15秒准备</button>
-  <button onclick="mode2Start()">模式二：开始1分45秒</button>
+        <div class="controls">
+          <button class="btn primary" onclick="mode1()">模式一：1分钟</button>
+          <button class="btn" onclick="mode2Prep()">模式二：15秒准备</button>
+          <button class="btn primary" onclick="mode2Start()">模式二：开始1分45秒</button>
+          <button class="btn ghost" onclick="resetAll()">重置</button>
+        </div>
 
-  <div id="time">00:00</div>
+        <div class="minirow">
+          <button class="btn" id="pauseBtn" onclick="pauseTimer()" disabled>暂停</button>
+          <button class="btn" id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
+        </div>
+
+        <div class="footnote">
+          说明：只在开始时播报 <span class="kbd">3</span> <span class="kbd">2</span> <span class="kbd">1</span>，中途报时不加 3-2-1。
+          浏览器第一次需要你点击按钮后才允许语音。
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: rules -->
+    <div class="side">
+      <div class="card panel">
+        <p class="sectiontitle">模式规则</p>
+
+        <div class="rule">
+          <h3>模式一（1:00）</h3>
+          <ul>
+            <li>开始：3、2、1 → 报“60秒”</li>
+            <li>50、40 报时（前 30 秒每 10 秒）</li>
+            <li>30、25 报时（后 30 秒每 5 秒到 20 之前）</li>
+            <li>20 秒及以下逐秒倒数</li>
+          </ul>
+        </div>
+
+        <div class="rule">
+          <h3>模式二（准备 + 1:45）</h3>
+          <ul>
+            <li>准备：15 秒倒计时，不报时</li>
+            <li>开始：3、2、1 → 报“1分45秒”</li>
+            <li>1:30、1:10、1:00 报时</li>
+            <li>60 以下每 10 秒（50、40），30 以下每 5 秒到 15 之前（30、25、20）</li>
+            <li>15 秒及以下逐秒倒数</li>
+          </ul>
+        </div>
+
+        <div class="footnote">
+          暂停会冻结当前阶段（包含开始前 3-2-1、正式倒计时、准备倒计时）。
+          继续会从冻结点恢复。
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
+    // ====== State ======
     let timer = null;
     let remaining = 0;
 
+    // phase: 'idle' | 'prep' | 'prestart' | 'running' | 'done'
+    let phase = 'idle';
+    let paused = false;
+
+    // For resume
+    let resumeHandler = null;
+
+    // For startWith321
+    let startCfg = null; // {startSeconds, startSpeakText, tickFn}
+
+    // ====== UI helpers ======
+    function setStatus(text, live) {
+      document.getElementById("statusText").innerText = text;
+      const dot = document.getElementById("statusDot");
+      dot.classList.toggle("live", !!live);
+    }
+
+    function setPauseResumeEnabled(canPause, canResume) {
+      document.getElementById("pauseBtn").disabled = !canPause;
+      document.getElementById("resumeBtn").disabled = !canResume;
+    }
+
+    // ====== Speech / Display ======
     function speak(text) {
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = "zh-CN";
@@ -57,7 +398,6 @@
       }
     }
 
-    // 秒数转中文（105 → 1分45秒）
     function formatSpeakSeconds(sec) {
       if (sec >= 60) {
         const m = Math.floor(sec / 60);
@@ -68,14 +408,55 @@
       return `${sec}秒`;
     }
 
-    // 开始前 3-2-1，然后立刻报开始时间
-    function startWith321(startSeconds, startSpeakText, tickFn) {
+    // ====== Pause / Resume / Reset ======
+    function pauseTimer() {
+      if (!timer) return;
       clearTimer();
+      paused = true;
+      setStatus("Paused", true);
+      setPauseResumeEnabled(false, true);
+    }
+
+    function resumeTimer() {
+      if (!paused || typeof resumeHandler !== "function") return;
+      paused = false;
+      setPauseResumeEnabled(true, false);
+      timer = setInterval(resumeHandler, 1000);
+      // status text will be set by handler tick based on phase; set immediately:
+      if (phase === "prep") setStatus("Prep", true);
+      else if (phase === "prestart") setStatus("Starting", true);
+      else if (phase === "running") setStatus("Running", true);
+    }
+
+    function resetAll() {
+      clearTimer();
+      paused = false;
+      phase = "idle";
+      startCfg = null;
+      resumeHandler = null;
+      remaining = 0;
+      updateDisplay();
+      setStatus("Idle", false);
+      setPauseResumeEnabled(false, false);
+      // stop queued speech to avoid overlap after reset
+      try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
+
+    // ====== Start helpers ======
+    // Only start has 3-2-1. After that, all mid announcements have no 3-2-1.
+    function startWith321(startSeconds, startSpeakText, tickFn) {
+      resetAll(); // ensures clean start
+      phase = "prestart";
       remaining = 3;
       updateDisplay();
+      setStatus("Starting", true);
+      setPauseResumeEnabled(true, false);
+
+      // speak immediately
       speak("3");
 
-      timer = setInterval(() => {
+      // prestart tick
+      resumeHandler = function prestartTick() {
         remaining--;
         updateDisplay();
 
@@ -84,73 +465,114 @@
 
         if (remaining <= 0) {
           clearTimer();
+
+          // switch to running
+          phase = "running";
           remaining = startSeconds;
           updateDisplay();
           speak(startSpeakText);
-          timer = setInterval(tickFn, 1000);
+
+          startCfg = { startSeconds, startSpeakText, tickFn };
+
+          resumeHandler = function runningTick() {
+            tickFn();
+          };
+
+          timer = setInterval(resumeHandler, 1000);
+          setStatus("Running", true);
+          setPauseResumeEnabled(true, false);
         }
-      }, 1000);
+      };
+
+      // store config for completeness
+      startCfg = { startSeconds, startSpeakText, tickFn };
+
+      timer = setInterval(resumeHandler, 1000);
     }
 
-    /* ========== 模式一：1分钟 ========== */
+    // ====== Mode 1 ======
     function mode1() {
+      // Start: 3-2-1 then "60秒"
       startWith321(60, "60秒", () => {
         remaining--;
         updateDisplay();
+        setStatus("Running", true);
 
-        // 中途报时（无 3-2-1）
+        // mid announcements (NO 3-2-1)
         if ([50, 40, 30, 25].includes(remaining)) {
           speak(`${remaining}秒`);
         }
 
-        // 20秒及以下逐秒倒数
+        // 20 and below: countdown
         if (remaining <= 20 && remaining > 0) {
           speak(remaining.toString());
         }
 
         if (remaining <= 0) {
           clearTimer();
+          phase = "done";
+          setStatus("Done", false);
+          setPauseResumeEnabled(false, false);
           speak("结束");
         }
       });
     }
 
-    /* ========== 模式二准备：15秒不报时 ========== */
+    // ====== Mode 2 Prep (15s, no speech) ======
     function mode2Prep() {
-      clearTimer();
+      resetAll();
+      phase = "prep";
       remaining = 15;
       updateDisplay();
+      setStatus("Prep", true);
+      setPauseResumeEnabled(true, false);
 
-      timer = setInterval(() => {
+      resumeHandler = function prepTick() {
         remaining--;
         updateDisplay();
-        if (remaining <= 0) clearTimer();
-      }, 1000);
+        setStatus("Prep", true);
+
+        if (remaining <= 0) {
+          clearTimer();
+          phase = "idle";
+          setStatus("Idle", false);
+          setPauseResumeEnabled(false, false);
+        }
+      };
+
+      timer = setInterval(resumeHandler, 1000);
     }
 
-    /* ========== 模式二正式：1分45秒 ========== */
+    // ====== Mode 2 Start (1:45) ======
     function mode2Start() {
+      // Start: 3-2-1 then "1分45秒"
       startWith321(105, "1分45秒", () => {
         remaining--;
         updateDisplay();
+        setStatus("Running", true);
 
-        // 中途报时（无 3-2-1）
+        // mid announcements (NO 3-2-1)
         if ([90, 70, 60, 50, 40, 30, 25, 20].includes(remaining)) {
           speak(formatSpeakSeconds(remaining));
         }
 
-        // 15秒及以下逐秒倒数
+        // 15 and below: countdown
         if (remaining <= 15 && remaining > 0) {
           speak(remaining.toString());
         }
 
         if (remaining <= 0) {
           clearTimer();
+          phase = "done";
+          setStatus("Done", false);
+          setPauseResumeEnabled(false, false);
           speak("结束");
         }
       });
     }
-  </script>
 
+    // init
+    resetAll();
+  </script>
 </body>
 </html>
