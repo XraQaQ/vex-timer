@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VEX 语音报时计时器</title>
+  <title>VEX Timer</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -113,6 +113,13 @@
       text-overflow:ellipsis;
     }
 
+    .headright{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex: 0 0 auto;
+    }
+
     .statuspill{
       padding:8px 10px;
       border:1px solid var(--border);
@@ -124,6 +131,8 @@
       gap:8px;
       background: rgba(18,24,36,.55);
       flex: 0 0 auto;
+      min-width: 106px;
+      justify-content:center;
     }
     .dot{
       width:8px; height:8px;
@@ -131,6 +140,22 @@
       background: rgba(152,166,198,.6);
     }
     .dot.live{ background: var(--vex-red2); box-shadow: 0 0 0 4px rgba(225,25,25,.18); }
+
+    .langbtn{
+      appearance:none;
+      border:1px solid var(--border);
+      background: rgba(18,24,36,.55);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      transition: background .2s ease, border-color .2s ease, transform .06s ease;
+      user-select:none;
+    }
+    .langbtn:hover{ background: rgba(18,24,36,.85); border-color: rgba(255,255,255,.14); }
+    .langbtn:active{ transform: translateY(1px); }
 
     .main{
       padding:20px 18px 18px;
@@ -179,7 +204,7 @@
       padding:12px 12px;
       border-radius:14px;
       font-size:14px;
-      font-weight:700;
+      font-weight:800;
       cursor:pointer;
       transition: transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
       display:flex;
@@ -223,7 +248,7 @@
       letter-spacing:.08em;
       text-transform:uppercase;
       color: var(--muted);
-      font-weight:800;
+      font-weight:900;
     }
 
     .rule{
@@ -270,6 +295,8 @@
       border-radius:8px;
       background: rgba(0,0,0,.18);
       color: var(--text);
+      display:inline-block;
+      margin: 0 2px;
     }
   </style>
 </head>
@@ -281,13 +308,17 @@
         <div class="brand">
           <div class="badge" aria-hidden="true"></div>
           <div class="titlewrap">
-            <p class="title">VEX TIMER</p>
-            <p class="subtitle">语音报时 · 训练/比赛用</p>
+            <p class="title" id="uiTitle">VEX TIMER</p>
+            <p class="subtitle" id="uiSubtitle">语音报时 · 训练/比赛用</p>
           </div>
         </div>
-        <div class="statuspill" id="statusPill">
-          <span class="dot" id="statusDot"></span>
-          <span id="statusText">Idle</span>
+
+        <div class="headright">
+          <button class="langbtn" id="langToggleBtn" onclick="toggleLang()">中文 / EN</button>
+          <div class="statuspill">
+            <span class="dot" id="statusDot"></span>
+            <span id="statusText">Idle</span>
+          </div>
         </div>
       </div>
 
@@ -297,10 +328,10 @@
         </div>
 
         <div class="controls">
-          <button class="btn primary" onclick="mode1()">Skills</button>
-          <button class="btn" onclick="mode2Prep()">15秒自动</button>
-          <button class="btn primary" onclick="mode2Start()">Driver</button>
-          <button class="btn ghost" onclick="resetAll()">重置</button>
+          <button class="btn primary" id="btnSkills" onclick="mode1()">Skills</button>
+          <button class="btn" id="btnAuto15" onclick="mode2Prep()">15秒自动</button>
+          <button class="btn primary" id="btnDriver" onclick="mode2Start()">Driver</button>
+          <button class="btn ghost" id="btnReset" onclick="resetAll()">重置</button>
         </div>
 
         <div class="minirow">
@@ -308,53 +339,209 @@
           <button class="btn" id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
         </div>
 
-        <div class="footnote">
-          说明：开始时播报 <span class="kbd">3</span> <span class="kbd">2</span> <span class="kbd">1</span>，中途报时不加 3-2-1。
+        <div class="footnote" id="uiFootnote">
+          说明：开始时播报 <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>，中途报时不加 3-2-1。浏览器第一次需要你点击按钮后才允许语音。
         </div>
       </div>
     </div>
 
     <div class="side">
       <div class="card panel">
-        <p class="sectiontitle">模式规则</p>
+        <p class="sectiontitle" id="uiRulesTitle">模式规则</p>
 
         <div class="rule">
-          <h3>Skills（1:00）</h3>
-          <ul>
-            <li>开始：3、2、1 → 报“60秒”</li>
-            <li>50、40 报时（前 30 秒每 10 秒）</li>
-            <li>30、25 报时（后 30 秒每 5 秒到 20 之前）</li>
-            <li>20 秒及以下逐秒倒数</li>
-          </ul>
+          <h3 id="uiRuleSkillsTitle">Skills（1:00）</h3>
+          <ul id="uiRuleSkillsList"></ul>
         </div>
 
         <div class="rule">
-          <h3>15秒自动</h3>
-          <ul>
-            <li>开始：3、2、1 → 自动开始 15 秒</li>
-            <li>15 秒阶段不报时（只倒计时显示）</li>
-          </ul>
+          <h3 id="uiRuleAuto15Title">15秒自动</h3>
+          <ul id="uiRuleAuto15List"></ul>
         </div>
 
         <div class="rule">
-          <h3>Driver（准备 + 1:45）</h3>
-          <ul>
-            <li>开始：3、2、1 → 报“1分45秒”</li>
-            <li>1:30、1:10、1:00 报时</li>
-            <li>60 以下每 10 秒（50、40），30 以下每 5 秒到 15 之前（30、25、20）</li>
-            <li>15 秒及以下逐秒倒数</li>
-          </ul>
+          <h3 id="uiRuleDriverTitle">Driver（1:45）</h3>
+          <ul id="uiRuleDriverList"></ul>
         </div>
 
-        <div class="footnote">
-          暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。
-          继续会从冻结点恢复。
+        <div class="footnote" id="uiPauseNote">
+          暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。继续会从冻结点恢复。
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    // ========= i18n =========
+    let lang = localStorage.getItem("vex_timer_lang") || "zh"; // 'zh' | 'en'
+
+    const I18N = {
+      zh: {
+        title: "VEX TIMER",
+        subtitle: "语音报时 · 训练/比赛用",
+        toggle: "中文 / EN",
+        btnSkills: "Skills",
+        btnAuto15: "15秒自动",
+        btnDriver: "Driver",
+        btnReset: "重置",
+        btnPause: "暂停",
+        btnResume: "继续",
+        rulesTitle: "模式规则",
+        footnote: `说明：开始时播报 <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>，中途报时不加 3-2-1。浏览器第一次需要你点击按钮后才允许语音。`,
+        pauseNote: "暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。继续会从冻结点恢复。",
+        ruleSkillsTitle: "Skills（1:00）",
+        ruleSkills: [
+          "开始：3、2、1 → 报“60秒”",
+          "50、40 报时（前 30 秒每 10 秒）",
+          "30、25 报时（后 30 秒每 5 秒到 20 之前）",
+          "20 秒及以下逐秒倒数"
+        ],
+        ruleAuto15Title: "15秒自动",
+        ruleAuto15: [
+          "开始：3、2、1 → 自动开始 15 秒",
+          "15 秒阶段不报时（只倒计时显示）"
+        ],
+        ruleDriverTitle: "Driver（1:45）",
+        ruleDriver: [
+          "开始：3、2、1 → 报“1分45秒”",
+          "1:30、1:10、1:00 报时",
+          "60 以下每 10 秒（50、40），30 以下每 5 秒到 15 之前（30、25、20）",
+          "15 秒及以下逐秒倒数"
+        ],
+        status: {
+          idle: "Idle",
+          starting: "Starting",
+          running: "Running",
+          auto15: "Auto 15s",
+          paused: "Paused",
+          done: "Done"
+        },
+        speak: {
+          start60: "60秒",
+          start145: "1分45秒",
+          end: "结束",
+          num: (n) => String(n), // countdown numbers
+          seconds: (n) => `${n}秒`,
+          time: (sec) => {
+            if (sec >= 60) {
+              const m = Math.floor(sec / 60);
+              const s = sec % 60;
+              if (s === 0) return `${m}分钟`;
+              return `${m}分${s}秒`;
+            }
+            return `${sec}秒`;
+          }
+        },
+        ttsLang: "zh-CN",
+      },
+      en: {
+        title: "VEX TIMER",
+        subtitle: "Voice callouts · Practice/Match",
+        toggle: "中文 / EN",
+        btnSkills: "Skills",
+        btnAuto15: "Auto 15s",
+        btnDriver: "Driver",
+        btnReset: "Reset",
+        btnPause: "Pause",
+        btnResume: "Resume",
+        rulesTitle: "MODE RULES",
+        footnote: `Note: Only the start has <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>. Mid callouts do NOT use 3-2-1. Your first click enables speech in most browsers.`,
+        pauseNote: "Pause freezes the current phase (start 3-2-1, Auto 15s, and running timers). Resume continues from the freeze point.",
+        ruleSkillsTitle: "Skills (1:00)",
+        ruleSkills: [
+          "Start: 3-2-1 → call “60 seconds”",
+          "Callouts at 50 and 40 seconds",
+          "Callouts at 30 and 25 seconds",
+          "From 20 seconds: spoken countdown"
+        ],
+        ruleAuto15Title: "Auto 15s",
+        ruleAuto15: [
+          "Start: 3-2-1 → automatically runs 15 seconds",
+          "No callouts during the 15-second phase (display only)"
+        ],
+        ruleDriverTitle: "Driver (1:45)",
+        ruleDriver: [
+          "Start: 3-2-1 → call “1 minute 45 seconds”",
+          "Callouts at 1:30, 1:10, 1:00",
+          "Then 50, 40, 30, 25, 20 seconds",
+          "From 15 seconds: spoken countdown"
+        ],
+        status: {
+          idle: "Idle",
+          starting: "Starting",
+          running: "Running",
+          auto15: "Auto 15s",
+          paused: "Paused",
+          done: "Done"
+        },
+        speak: {
+          start60: "60 seconds",
+          start145: "1 minute 45 seconds",
+          end: "End",
+          num: (n) => String(n),
+          seconds: (n) => `${n} seconds`,
+          time: (sec) => {
+            if (sec >= 60) {
+              const m = Math.floor(sec / 60);
+              const s = sec % 60;
+              if (s === 0) return `${m} minute${m === 1 ? "" : "s"}`;
+              return `${m} minute${m === 1 ? "" : "s"} ${s} seconds`;
+            }
+            return `${sec} seconds`;
+          }
+        },
+        ttsLang: "en-US",
+      }
+    };
+
+    function applyLanguage() {
+      const L = I18N[lang];
+
+      document.documentElement.lang = (lang === "zh") ? "zh-CN" : "en";
+      document.getElementById("uiTitle").innerText = L.title;
+      document.getElementById("uiSubtitle").innerText = L.subtitle;
+      document.getElementById("langToggleBtn").innerText = L.toggle;
+
+      document.getElementById("btnSkills").innerText = L.btnSkills;
+      document.getElementById("btnAuto15").innerText = L.btnAuto15;
+      document.getElementById("btnDriver").innerText = L.btnDriver;
+      document.getElementById("btnReset").innerText = L.btnReset;
+      document.getElementById("pauseBtn").innerText = L.btnPause;
+      document.getElementById("resumeBtn").innerText = L.btnResume;
+
+      document.getElementById("uiRulesTitle").innerText = L.rulesTitle;
+      document.getElementById("uiFootnote").innerHTML = L.footnote;
+      document.getElementById("uiPauseNote").innerText = L.pauseNote;
+
+      document.getElementById("uiRuleSkillsTitle").innerText = L.ruleSkillsTitle;
+      document.getElementById("uiRuleAuto15Title").innerText = L.ruleAuto15Title;
+      document.getElementById("uiRuleDriverTitle").innerText = L.ruleDriverTitle;
+
+      fillList("uiRuleSkillsList", L.ruleSkills);
+      fillList("uiRuleAuto15List", L.ruleAuto15);
+      fillList("uiRuleDriverList", L.ruleDriver);
+
+      // Refresh status label with current phase
+      refreshStatusLabel();
+    }
+
+    function fillList(id, items) {
+      const ul = document.getElementById(id);
+      ul.innerHTML = "";
+      for (const text of items) {
+        const li = document.createElement("li");
+        li.textContent = text;
+        ul.appendChild(li);
+      }
+    }
+
+    function toggleLang() {
+      lang = (lang === "zh") ? "en" : "zh";
+      localStorage.setItem("vex_timer_lang", lang);
+      applyLanguage();
+    }
+
+    // ========= Timer Logic =========
     let timer = null;
     let remaining = 0;
 
@@ -364,11 +551,23 @@
     // handler used for resume
     let resumeHandler = null;
 
-    // ===== UI =====
-    function setStatus(text, live) {
-      document.getElementById("statusText").innerText = text;
+    // ===== UI status =====
+    function setStatusKey(statusKey, live) {
+      const L = I18N[lang];
+      document.getElementById("statusText").innerText = L.status[statusKey] || statusKey;
       const dot = document.getElementById("statusDot");
       dot.classList.toggle("live", !!live);
+    }
+
+    function refreshStatusLabel() {
+      // Map phase/paused to status key
+      if (paused) return setStatusKey("paused", true);
+      if (phase === "idle") return setStatusKey("idle", false);
+      if (phase === "prestart") return setStatusKey("starting", true);
+      if (phase === "prep") return setStatusKey("auto15", true);
+      if (phase === "running") return setStatusKey("running", true);
+      if (phase === "done") return setStatusKey("done", false);
+      setStatusKey("idle", false);
     }
 
     function setPauseResumeEnabled(canPause, canResume) {
@@ -379,7 +578,7 @@
     // ===== Speech & Display =====
     function speak(text) {
       const msg = new SpeechSynthesisUtterance(text);
-      msg.lang = "zh-CN";
+      msg.lang = I18N[lang].ttsLang;
       window.speechSynthesis.speak(msg);
     }
 
@@ -397,22 +596,12 @@
       }
     }
 
-    function formatSpeakSeconds(sec) {
-      if (sec >= 60) {
-        const m = Math.floor(sec / 60);
-        const s = sec % 60;
-        if (s === 0) return `${m}分钟`;
-        return `${m}分${s}秒`;
-      }
-      return `${sec}秒`;
-    }
-
     // ===== Pause / Resume / Reset =====
     function pauseTimer() {
       if (!timer) return;
       clearTimer();
       paused = true;
-      setStatus("Paused", true);
+      refreshStatusLabel();
       setPauseResumeEnabled(false, true);
     }
 
@@ -421,10 +610,7 @@
       paused = false;
       setPauseResumeEnabled(true, false);
       timer = setInterval(resumeHandler, 1000);
-
-      if (phase === "prep") setStatus("Auto 15s", true);
-      else if (phase === "prestart") setStatus("Starting", true);
-      else if (phase === "running") setStatus("Running", true);
+      refreshStatusLabel();
     }
 
     function resetAll() {
@@ -434,7 +620,7 @@
       resumeHandler = null;
       remaining = 0;
       updateDisplay();
-      setStatus("Idle", false);
+      refreshStatusLabel();
       setPauseResumeEnabled(false, false);
       try { window.speechSynthesis.cancel(); } catch(e) {}
     }
@@ -445,7 +631,7 @@
       phase = "prestart";
       remaining = 3;
       updateDisplay();
-      setStatus("Starting", true);
+      refreshStatusLabel();
       setPauseResumeEnabled(true, false);
 
       speak("3");
@@ -464,12 +650,10 @@
           updateDisplay();
           speak(startSpeakText);
 
-          resumeHandler = function runningTick() {
-            tickFn();
-          };
+          resumeHandler = function runningTick() { tickFn(); };
 
           timer = setInterval(resumeHandler, 1000);
-          setStatus("Running", true);
+          refreshStatusLabel();
           setPauseResumeEnabled(true, false);
         }
       };
@@ -483,7 +667,7 @@
       phase = "prestart";
       remaining = 3;
       updateDisplay();
-      setStatus("Starting", true);
+      refreshStatusLabel();
       setPauseResumeEnabled(true, false);
 
       speak("3");
@@ -500,18 +684,17 @@
           phase = "prep";
           remaining = totalSeconds;
           updateDisplay();
-          setStatus("Auto 15s", true);
+          refreshStatusLabel();
 
-          // 15秒阶段：不报时，只走显示倒计时
           resumeHandler = function prepTick() {
             remaining--;
             updateDisplay();
-            setStatus("Auto 15s", true);
+            refreshStatusLabel();
 
             if (remaining <= 0) {
               clearTimer();
               phase = "idle";
-              setStatus("Idle", false);
+              refreshStatusLabel();
               setPauseResumeEnabled(false, false);
             }
           };
@@ -524,67 +707,64 @@
       timer = setInterval(resumeHandler, 1000);
     }
 
-    // ===== Skills (1:00) =====
-    function mode1() {
-      startWith321(60, "60秒", () => {
+    // ===== Modes =====
+    function mode1() { // Skills (1:00)
+      const S = I18N[lang].speak;
+      startWith321(60, S.start60, () => {
         remaining--;
         updateDisplay();
-        setStatus("Running", true);
+        refreshStatusLabel();
 
-        // mid announcements (NO 3-2-1)
         if ([50, 40, 30, 25].includes(remaining)) {
-          speak(`${remaining}秒`);
+          speak(S.seconds(remaining));
         }
 
-        // 20 and below: countdown
         if (remaining <= 20 && remaining > 0) {
-          speak(remaining.toString());
+          speak(S.num(remaining));
         }
 
         if (remaining <= 0) {
           clearTimer();
           phase = "done";
-          setStatus("Done", false);
+          refreshStatusLabel();
           setPauseResumeEnabled(false, false);
-          speak("结束");
+          speak(S.end);
         }
       });
     }
 
-    // ===== 15秒自动 =====
-    function mode2Prep() {
+    function mode2Prep() { // Auto 15s
       prepWith321(15);
     }
 
-    // ===== Driver (1:45) =====
-    function mode2Start() {
-      startWith321(105, "1分45秒", () => {
+    function mode2Start() { // Driver (1:45)
+      const S = I18N[lang].speak;
+      startWith321(105, S.start145, () => {
         remaining--;
         updateDisplay();
-        setStatus("Running", true);
+        refreshStatusLabel();
 
-        // mid announcements (NO 3-2-1)
         if ([90, 70, 60, 50, 40, 30, 25, 20].includes(remaining)) {
-          speak(formatSpeakSeconds(remaining));
+          speak(S.time(remaining));
         }
 
-        // 15 and below: countdown
         if (remaining <= 15 && remaining > 0) {
-          speak(remaining.toString());
+          speak(S.num(remaining));
         }
 
         if (remaining <= 0) {
           clearTimer();
           phase = "done";
-          setStatus("Done", false);
+          refreshStatusLabel();
           setPauseResumeEnabled(false, false);
-          speak("结束");
+          speak(S.end);
         }
       });
     }
 
     // init
     resetAll();
+    applyLanguage();
   </script>
 </body>
 </html>
