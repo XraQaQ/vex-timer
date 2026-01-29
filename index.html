@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>语音报时倒计时</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+    }
+    #time {
+      font-size: 48px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>语音报时倒计时</h1>
+
+<button onclick="mode1()">模式一：1分钟报时</button>
+<button onclick="mode2Prep()">模式二：15秒准备</button>
+<button onclick="mode2Start()">模式二：开始1分45秒</button>
+
+<div id="time">00:00</div>
+
+<script>
+let timer = null;
+let remaining = 0;
+
+// 语音函数
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "zh-CN";
+  window.speechSynthesis.speak(msg);
+}
+
+// 更新时间显示
+function updateDisplay() {
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  document.getElementById("time").innerText =
+    `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// 清除旧定时器
+function clearTimer() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+// ---------- 模式一 ----------
+function mode1() {
+  clearTimer();
+  remaining = 60;
+  updateDisplay();
+
+  timer = setInterval(() => {
+    remaining--;
+    updateDisplay();
+
+    if (remaining > 30 && remaining % 10 === 0) {
+      speak(remaining + "秒");
+    }
+
+    if (remaining <= 30 && remaining > 20 && remaining % 5 === 0) {
+      speak(remaining + "秒");
+    }
+
+    if (remaining <= 20 && remaining > 0) {
+      speak(remaining.toString());
+    }
+
+    if (remaining <= 0) {
+      clearTimer();
+      speak("结束");
+    }
+  }, 1000);
+}
+
+// ---------- 模式二：准备 ----------
+function mode2Prep() {
+  clearTimer();
+  remaining = 15;
+  updateDisplay();
+
+  timer = setInterval(() => {
+    remaining--;
+    updateDisplay();
+
+    if (remaining <= 0) {
+      clearTimer();
+    }
+  }, 1000);
+}
+
+// ---------- 模式二：正式 ----------
+function mode2Start() {
+  clearTimer();
+  remaining = 105; // 1分45秒
+  updateDisplay();
+
+  timer = setInterval(() => {
+    remaining--;
+    updateDisplay();
+
+    if (remaining === 90 || remaining === 70 || remaining === 60) {
+      speak(remaining + "秒");
+    }
+
+    if (remaining < 60 && remaining > 30 && remaining % 10 === 0) {
+      speak(remaining + "秒");
+    }
+
+    if (remaining <= 30 && remaining > 15 && remaining % 5 === 0) {
+      speak(remaining + "秒");
+    }
+
+    if (remaining <= 15 && remaining > 0) {
+      speak(remaining.toString());
+    }
+
+    if (remaining <= 0) {
+      clearTimer();
+      speak("结束");
+    }
+  }, 1000);
+}
+</script>
+
+</body>
+</html>
