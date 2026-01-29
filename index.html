@@ -1,137 +1,154 @@
-<script>
-let timer = null;
-let remaining = 0;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>语音报时倒计时</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { font-size: 18px; margin: 10px; padding: 10px 20px; }
+    #time { font-size: 48px; margin-top: 30px; }
+  </style>
+</head>
+<body>
 
-// 语音函数
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "zh-CN";
-  window.speechSynthesis.speak(msg);
-}
+  <h1>语音报时倒计时</h1>
 
-// 更新时间显示
-function updateDisplay() {
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  document.getElementById("time").innerText =
-    `${m}:${s.toString().padStart(2, "0")}`;
-}
+  <button onclick="mode1()">模式一：1分钟报时</button>
+  <button onclick="mode2Prep()">模式二：15秒准备</button>
+  <button onclick="mode2Start()">模式二：开始1分45秒</button>
 
-// 清除旧定时器
-function clearTimer() {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
-}
+  <div id="time">00:00</div>
 
-// 将秒数转成更自然的中文播报（例如 105 -> 1分45秒）
-function formatSpeakSeconds(sec) {
-  if (sec >= 60) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    if (s === 0) return `${m}分钟`;
-    return `${m}分${s}秒`;
-  }
-  return `${sec}秒`;
-}
+  <script>
+    let timer = null;
+    let remaining = 0;
 
-// 对每个报时点 t：在 t+3/t+2/t+1 说 3/2/1，在 t 说 “t秒”
-function handlePreAnnounce(targets) {
-  for (const t of targets) {
-    if (remaining === t + 3) speak("3");
-    if (remaining === t + 2) speak("2");
-    if (remaining === t + 1) speak("1");
-    if (remaining === t) speak(formatSpeakSeconds(t));
-  }
-}
+    function speak(text) {
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = "zh-CN";
+      window.speechSynthesis.speak(msg);
+    }
 
-// 开始前 3-2-1，然后开始时立刻报“开始剩余时间”（你说的：第一个秒也要报）
-function startWith321(startSeconds, startSpeakText, tickFn) {
-  clearTimer();
-  remaining = 3;
-  updateDisplay();
-  speak("3");
+    function updateDisplay() {
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      document.getElementById("time").innerText =
+        `${m}:${s.toString().padStart(2, "0")}`;
+    }
 
-  timer = setInterval(() => {
-    remaining--;
-    updateDisplay();
+    function clearTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
 
-    if (remaining === 2) speak("2");
-    if (remaining === 1) speak("1");
+    function formatSpeakSeconds(sec) {
+      if (sec >= 60) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        if (s === 0) return `${m}分钟`;
+        return `${m}分${s}秒`;
+      }
+      return `${sec}秒`;
+    }
 
-    if (remaining <= 0) {
+    // 对每个报时点 t：在 t+3/t+2/t+1 说 3/2/1，在 t 说 “t秒”
+    function handlePreAnnounce(targets) {
+      for (const t of targets) {
+        if (remaining === t + 3) speak("3");
+        if (remaining === t + 2) speak("2");
+        if (remaining === t + 1) speak("1");
+        if (remaining === t) speak(formatSpeakSeconds(t));
+      }
+    }
+
+    // 开始前 3-2-1，然后开始时立刻报“开始剩余时间”（第一个秒也要报）
+    function startWith321(startSeconds, startSpeakText, tickFn) {
       clearTimer();
-
-      remaining = startSeconds;
+      remaining = 3;
       updateDisplay();
-      speak(startSpeakText);
+      speak("3");
 
-      timer = setInterval(tickFn, 1000);
-    }
-  }, 1000);
-}
+      timer = setInterval(() => {
+        remaining--;
+        updateDisplay();
 
-// ---------- 模式一：1分钟报时 ----------
-function mode1() {
-  // 开始：3-2-1 然后报 60秒
-  startWith321(60, "60秒", () => {
-    remaining--;
-    updateDisplay();
+        if (remaining === 2) speak("2");
+        if (remaining === 1) speak("1");
 
-    // 报时点：前30秒每10秒（50、40）
-    // 后30秒每5秒到20之前（30、25）
-    // 这些报时点都要在报时前加 3-2-1
-    handlePreAnnounce([50, 40, 30, 25]);
+        if (remaining <= 0) {
+          clearTimer();
 
-    // 20秒及以下：按要求直接逐秒倒数（不再加 3-2-1，避免语音重叠冲突）
-    if (remaining <= 20 && remaining > 0) {
-      speak(remaining.toString());
+          remaining = startSeconds;
+          updateDisplay();
+          speak(startSpeakText);
+
+          timer = setInterval(tickFn, 1000);
+        }
+      }, 1000);
     }
 
-    if (remaining <= 0) {
+    // ---------- 模式一：1分钟报时 ----------
+    function mode1() {
+      // 开始：3-2-1 然后报 60秒
+      startWith321(60, "60秒", () => {
+        remaining--;
+        updateDisplay();
+
+        // 报时点：50、40（前30秒每10秒）；30、25（后30秒每5秒到20之前）
+        // 这些报时点前加 3-2-1
+        handlePreAnnounce([50, 40, 30, 25]);
+
+        // 20秒及以下：逐秒倒数（不加 3-2-1，避免语音重叠）
+        if (remaining <= 20 && remaining > 0) {
+          speak(remaining.toString());
+        }
+
+        if (remaining <= 0) {
+          clearTimer();
+          speak("结束");
+        }
+      });
+    }
+
+    // ---------- 模式二：15秒准备（不报时） ----------
+    function mode2Prep() {
       clearTimer();
-      speak("结束");
-    }
-  });
-}
+      remaining = 15;
+      updateDisplay();
 
-// ---------- 模式二：15秒准备（不报时） ----------
-function mode2Prep() {
-  clearTimer();
-  remaining = 15;
-  updateDisplay();
-
-  timer = setInterval(() => {
-    remaining--;
-    updateDisplay();
-    if (remaining <= 0) clearTimer();
-  }, 1000);
-}
-
-// ---------- 模式二：开始1分45秒倒计时 ----------
-function mode2Start() {
-  // 开始：3-2-1 然后报 1分45秒（不是105秒）
-  startWith321(105, "1分45秒", () => {
-    remaining--;
-    updateDisplay();
-
-    // 报时点：
-    // 1:30(90), 1:10(70), 1:00(60)
-    // 60以下每10秒（50、40）
-    // 30以下每5秒到15之前（30、25、20）
-    // 这些报时点都要在报时前加 3-2-1
-    handlePreAnnounce([90, 70, 60, 50, 40, 30, 25, 20]);
-
-    // 15秒及以下：按要求直接逐秒倒数
-    if (remaining <= 15 && remaining > 0) {
-      speak(remaining.toString());
+      timer = setInterval(() => {
+        remaining--;
+        updateDisplay();
+        if (remaining <= 0) clearTimer();
+      }, 1000);
     }
 
-    if (remaining <= 0) {
-      clearTimer();
-      speak("结束");
+    // ---------- 模式二：开始1分45秒倒计时 ----------
+    function mode2Start() {
+      // 开始：3-2-1 然后报 1分45秒（不是105秒）
+      startWith321(105, "1分45秒", () => {
+        remaining--;
+        updateDisplay();
+
+        // 报时点：90(1:30), 70(1:10), 60(1:00), 50, 40, 30, 25, 20
+        // 这些点前加 3-2-1
+        handlePreAnnounce([90, 70, 60, 50, 40, 30, 25, 20]);
+
+        // 15秒及以下：逐秒倒数
+        if (remaining <= 15 && remaining > 0) {
+          speak(remaining.toString());
+        }
+
+        if (remaining <= 0) {
+          clearTimer();
+          speak("结束");
+        }
+      });
     }
-  });
-}
-</script>
+  </script>
+
+</body>
+</html>
