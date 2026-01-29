@@ -276,7 +276,6 @@
 
 <body>
   <div class="app">
-    <!-- Left: timer + buttons -->
     <div class="card">
       <div class="header">
         <div class="brand">
@@ -298,9 +297,9 @@
         </div>
 
         <div class="controls">
-          <button class="btn primary" onclick="mode1()">模式一：1分钟</button>
-          <button class="btn" onclick="mode2Prep()">模式二：15秒准备</button>
-          <button class="btn primary" onclick="mode2Start()">模式二：开始1分45秒</button>
+          <button class="btn primary" onclick="mode1()">Skills</button>
+          <button class="btn" onclick="mode2Prep()">15秒自动</button>
+          <button class="btn primary" onclick="mode2Start()">Driver</button>
           <button class="btn ghost" onclick="resetAll()">重置</button>
         </div>
 
@@ -310,19 +309,17 @@
         </div>
 
         <div class="footnote">
-          说明：只在开始时播报 <span class="kbd">3</span> <span class="kbd">2</span> <span class="kbd">1</span>，中途报时不加 3-2-1。
-          浏览器第一次需要你点击按钮后才允许语音。
+          说明：开始时播报 <span class="kbd">3</span> <span class="kbd">2</span> <span class="kbd">1</span>，中途报时不加 3-2-1。
         </div>
       </div>
     </div>
 
-    <!-- Right: rules -->
     <div class="side">
       <div class="card panel">
         <p class="sectiontitle">模式规则</p>
 
         <div class="rule">
-          <h3>模式一（1:00）</h3>
+          <h3>Skills（1:00）</h3>
           <ul>
             <li>开始：3、2、1 → 报“60秒”</li>
             <li>50、40 报时（前 30 秒每 10 秒）</li>
@@ -332,9 +329,16 @@
         </div>
 
         <div class="rule">
-          <h3>模式二（准备 + 1:45）</h3>
+          <h3>15秒自动</h3>
           <ul>
-            <li>准备：15 秒倒计时，不报时</li>
+            <li>开始：3、2、1 → 自动开始 15 秒</li>
+            <li>15 秒阶段不报时（只倒计时显示）</li>
+          </ul>
+        </div>
+
+        <div class="rule">
+          <h3>Driver（准备 + 1:45）</h3>
+          <ul>
             <li>开始：3、2、1 → 报“1分45秒”</li>
             <li>1:30、1:10、1:00 报时</li>
             <li>60 以下每 10 秒（50、40），30 以下每 5 秒到 15 之前（30、25、20）</li>
@@ -343,7 +347,7 @@
         </div>
 
         <div class="footnote">
-          暂停会冻结当前阶段（包含开始前 3-2-1、正式倒计时、准备倒计时）。
+          暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。
           继续会从冻结点恢复。
         </div>
       </div>
@@ -351,21 +355,16 @@
   </div>
 
   <script>
-    // ====== State ======
     let timer = null;
     let remaining = 0;
 
-    // phase: 'idle' | 'prep' | 'prestart' | 'running' | 'done'
-    let phase = 'idle';
+    let phase = 'idle';      // 'idle' | 'prep' | 'prestart' | 'running' | 'done'
     let paused = false;
 
-    // For resume
+    // handler used for resume
     let resumeHandler = null;
 
-    // For startWith321
-    let startCfg = null; // {startSeconds, startSpeakText, tickFn}
-
-    // ====== UI helpers ======
+    // ===== UI =====
     function setStatus(text, live) {
       document.getElementById("statusText").innerText = text;
       const dot = document.getElementById("statusDot");
@@ -377,7 +376,7 @@
       document.getElementById("resumeBtn").disabled = !canResume;
     }
 
-    // ====== Speech / Display ======
+    // ===== Speech & Display =====
     function speak(text) {
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = "zh-CN";
@@ -408,7 +407,7 @@
       return `${sec}秒`;
     }
 
-    // ====== Pause / Resume / Reset ======
+    // ===== Pause / Resume / Reset =====
     function pauseTimer() {
       if (!timer) return;
       clearTimer();
@@ -422,8 +421,8 @@
       paused = false;
       setPauseResumeEnabled(true, false);
       timer = setInterval(resumeHandler, 1000);
-      // status text will be set by handler tick based on phase; set immediately:
-      if (phase === "prep") setStatus("Prep", true);
+
+      if (phase === "prep") setStatus("Auto 15s", true);
       else if (phase === "prestart") setStatus("Starting", true);
       else if (phase === "running") setStatus("Running", true);
     }
@@ -432,30 +431,25 @@
       clearTimer();
       paused = false;
       phase = "idle";
-      startCfg = null;
       resumeHandler = null;
       remaining = 0;
       updateDisplay();
       setStatus("Idle", false);
       setPauseResumeEnabled(false, false);
-      // stop queued speech to avoid overlap after reset
       try { window.speechSynthesis.cancel(); } catch(e) {}
     }
 
-    // ====== Start helpers ======
-    // Only start has 3-2-1. After that, all mid announcements have no 3-2-1.
+    // ===== Start with 3-2-1 (for Skills / Driver) =====
     function startWith321(startSeconds, startSpeakText, tickFn) {
-      resetAll(); // ensures clean start
+      resetAll();
       phase = "prestart";
       remaining = 3;
       updateDisplay();
       setStatus("Starting", true);
       setPauseResumeEnabled(true, false);
 
-      // speak immediately
       speak("3");
 
-      // prestart tick
       resumeHandler = function prestartTick() {
         remaining--;
         updateDisplay();
@@ -465,14 +459,10 @@
 
         if (remaining <= 0) {
           clearTimer();
-
-          // switch to running
           phase = "running";
           remaining = startSeconds;
           updateDisplay();
           speak(startSpeakText);
-
-          startCfg = { startSeconds, startSpeakText, tickFn };
 
           resumeHandler = function runningTick() {
             tickFn();
@@ -484,15 +474,58 @@
         }
       };
 
-      // store config for completeness
-      startCfg = { startSeconds, startSpeakText, tickFn };
+      timer = setInterval(resumeHandler, 1000);
+    }
+
+    // ===== Auto 15s with 3-2-1 (NO speech during 15s) =====
+    function prepWith321(totalSeconds) {
+      resetAll();
+      phase = "prestart";
+      remaining = 3;
+      updateDisplay();
+      setStatus("Starting", true);
+      setPauseResumeEnabled(true, false);
+
+      speak("3");
+
+      resumeHandler = function prestartTick() {
+        remaining--;
+        updateDisplay();
+
+        if (remaining === 2) speak("2");
+        if (remaining === 1) speak("1");
+
+        if (remaining <= 0) {
+          clearTimer();
+          phase = "prep";
+          remaining = totalSeconds;
+          updateDisplay();
+          setStatus("Auto 15s", true);
+
+          // 15秒阶段：不报时，只走显示倒计时
+          resumeHandler = function prepTick() {
+            remaining--;
+            updateDisplay();
+            setStatus("Auto 15s", true);
+
+            if (remaining <= 0) {
+              clearTimer();
+              phase = "idle";
+              setStatus("Idle", false);
+              setPauseResumeEnabled(false, false);
+            }
+          };
+
+          timer = setInterval(resumeHandler, 1000);
+          setPauseResumeEnabled(true, false);
+        }
+      };
 
       timer = setInterval(resumeHandler, 1000);
     }
 
-    // ====== Mode 1 ======
+    // ===== Skills (1:00) =====
     function mode1() {
-      // Start: 3-2-1 then "60秒"
       startWith321(60, "60秒", () => {
         remaining--;
         updateDisplay();
@@ -518,34 +551,13 @@
       });
     }
 
-    // ====== Mode 2 Prep (15s, no speech) ======
+    // ===== 15秒自动 =====
     function mode2Prep() {
-      resetAll();
-      phase = "prep";
-      remaining = 15;
-      updateDisplay();
-      setStatus("Prep", true);
-      setPauseResumeEnabled(true, false);
-
-      resumeHandler = function prepTick() {
-        remaining--;
-        updateDisplay();
-        setStatus("Prep", true);
-
-        if (remaining <= 0) {
-          clearTimer();
-          phase = "idle";
-          setStatus("Idle", false);
-          setPauseResumeEnabled(false, false);
-        }
-      };
-
-      timer = setInterval(resumeHandler, 1000);
+      prepWith321(15);
     }
 
-    // ====== Mode 2 Start (1:45) ======
+    // ===== Driver (1:45) =====
     function mode2Start() {
-      // Start: 3-2-1 then "1分45秒"
       startWith321(105, "1分45秒", () => {
         remaining--;
         updateDisplay();
