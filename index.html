@@ -1,217 +1,265 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VEX Timer</title>
+  <meta charset="UTF-8" />
+  <title>VEX Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<style>
-:root{
-  --bg:#0b0f14;
-  --panel:#121824;
-  --text:#e8eefc;
-  --muted:#98a6c6;
-  --vex-red:#e11919;
-  --border:rgba(255,255,255,0.08);
-  --radius:16px;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#070a0f;
-  color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-  display:flex;
-  justify-content:center;
-  padding:24px;
-}
-.app{width:900px;max-width:100%}
-.card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:20px;
-}
-h1{margin:0 0 12px 0;font-size:18px}
-#time{
-  font-size:72px;
-  font-weight:900;
-  text-align:center;
-  margin:20px 0;
-}
-.controls{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.btn{
-  padding:12px;
-  font-size:14px;
-  font-weight:800;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#151b2a;
-  color:var(--text);
-  cursor:pointer;
-}
-.btn.primary{background:var(--vex-red)}
-.btn:disabled{opacity:.4}
-.row{display:flex;gap:10px;margin-top:10px}
-input{
-  background:#0f1522;
-  border:1px solid var(--border);
-  border-radius:10px;
-  color:var(--text);
-  padding:10px;
-  width:100%;
-}
-.small{font-size:12px;color:var(--muted)}
-</style>
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #141a28, #05070d);
+      font-family: Inter, Arial, sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #111827, #0b1020);
+      border-radius: 18px;
+      width: 520px;
+      padding: 26px 28px 30px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .title {
+      font-weight: 800;
+      letter-spacing: .5px;
+      font-size: 20px;
+    }
+
+    .lang-btn {
+      border: none;
+      background: #1f2937;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .time {
+      text-align: center;
+      font-size: 72px;
+      font-weight: 900;
+      margin: 28px 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 0;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #e11d1d;
+      color: #fff;
+    }
+
+    .secondary {
+      background: #1f2937;
+      color: #e5e7eb;
+    }
+
+    .small {
+      padding: 10px 0;
+      font-size: 14px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .rule {
+      margin-top: 14px;
+      font-size: 12px;
+      opacity: .65;
+    }
+  </style>
 </head>
 
 <body>
-<div class="app">
   <div class="card">
-    <h1>VEX TIMER</h1>
+    <div class="top">
+      <div class="title" id="title">VEX TIMER</div>
+      <button class="lang-btn" id="langBtn">中</button>
+    </div>
 
-    <div id="time">0:00</div>
+    <div class="time" id="time">0:00</div>
 
-    <div class="controls">
-      <button class="btn primary" onclick="modeSkills()">Skills</button>
-      <button class="btn primary" onclick="modeDriver()">Driver</button>
-      <button class="btn" onclick="modeAuto15()">15秒自动</button>
-      <button class="btn" onclick="resetAll()">重置</button>
+    <div class="row">
+      <button class="primary" id="btnSkills"></button>
+      <button class="primary" id="btnDriver"></button>
     </div>
 
     <div class="row">
-      <input id="customInput" type="number" min="1" placeholder="自定义秒数（如 120）">
-      <button class="btn primary" onclick="modeCustom()">Custom Start</button>
+      <button class="secondary small" id="btnAuto15"></button>
+      <button class="secondary small" id="btnReset"></button>
     </div>
 
     <div class="row">
-      <button class="btn" id="pauseBtn" onclick="pauseTimer()" disabled>暂停</button>
-      <button class="btn" id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
+      <input id="customInput" placeholder="">
+      <button class="primary small" id="btnCustom"></button>
     </div>
 
-    <p class="small">
-      自定义规则：30秒前每10秒报时，30–15每5秒，15秒倒数
-    </p>
+    <div class="row">
+      <button class="secondary small" id="btnPause"></button>
+      <button class="secondary small" id="btnResume"></button>
+    </div>
+
+    <div class="rule" id="ruleText"></div>
   </div>
-</div>
 
 <script>
-let timer=null, remaining=0, paused=false, resumeHandler=null;
+/* ---------- Language ---------- */
+let lang = "en";
 
-function speak(t){
-  const u=new SpeechSynthesisUtterance(t);
-  u.lang="zh-CN";
+const TEXT = {
+  en: {
+    title: "VEX TIMER",
+    skills: "Skills",
+    driver: "Driver",
+    auto15: "15s Auto",
+    reset: "Reset",
+    custom: "Custom Start",
+    pause: "Pause",
+    resume: "Resume",
+    input: "Custom seconds (e.g. 120)",
+    rule: "Rule: >30s every 10s · 30–15 every 5s · last 15s countdown"
+  },
+  zh: {
+    title: "VEX 计时器",
+    skills: "技能赛",
+    driver: "手动赛",
+    auto15: "15秒自动",
+    reset: "重置",
+    custom: "自定义开始",
+    pause: "暂停",
+    resume: "继续",
+    input: "自定义秒数（如 120）",
+    rule: "规则：30秒前每10秒，30–15每5秒，15秒倒数"
+  }
+};
+
+function renderLang() {
+  const t = TEXT[lang];
+  title.textContent = t.title;
+  btnSkills.textContent = t.skills;
+  btnDriver.textContent = t.driver;
+  btnAuto15.textContent = t.auto15;
+  btnReset.textContent = t.reset;
+  btnCustom.textContent = t.custom;
+  btnPause.textContent = t.pause;
+  btnResume.textContent = t.resume;
+  customInput.placeholder = t.input;
+  ruleText.textContent = t.rule;
+  langBtn.textContent = lang === "en" ? "中" : "EN";
+}
+
+langBtn.onclick = () => {
+  lang = lang === "en" ? "zh" : "en";
+  renderLang();
+};
+
+renderLang();
+
+/* ---------- Timer ---------- */
+let timer = null;
+let remaining = 0;
+let paused = false;
+
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang === "zh" ? "zh-CN" : "en-US";
   speechSynthesis.speak(u);
 }
-function update(){
-  const m=Math.floor(remaining/60), s=remaining%60;
-  document.getElementById("time").innerText=`${m}:${s.toString().padStart(2,"0")}`;
-}
-function clearT(){ if(timer){clearInterval(timer);timer=null;} }
 
-function setPause(p){
-  document.getElementById("pauseBtn").disabled=!p;
-  document.getElementById("resumeBtn").disabled=p;
+function update() {
+  time.textContent =
+    Math.floor(remaining / 60) + ":" +
+    (remaining % 60).toString().padStart(2, "0");
 }
 
-function resetAll(){
-  clearT();
-  paused=false;
-  remaining=0;
-  update();
-  setPause(false);
-  try{speechSynthesis.cancel()}catch{}
+function clearTimer() {
+  clearInterval(timer);
+  timer = null;
 }
 
-function pauseTimer(){
-  if(!timer)return;
-  clearT();
-  paused=true;
-  setPause(false);
-}
-function resumeTimer(){
-  if(!paused)return;
-  paused=false;
-  timer=setInterval(resumeHandler,1000);
-  setPause(true);
-}
-
-function start321(startSeconds,onTick){
-  resetAll();
-  remaining=3;
+function start(seconds) {
+  clearTimer();
+  paused = false;
+  remaining = 3;
   update();
   speak("3");
 
-  resumeHandler=function(){
+  timer = setInterval(() => {
     remaining--;
     update();
-    if(remaining===2)speak("2");
-    if(remaining===1)speak("1");
-    if(remaining<=0){
-      clearT();
-      remaining=startSeconds;
+    if (remaining === 2) speak("2");
+    if (remaining === 1) speak("1");
+
+    if (remaining <= 0) {
+      clearTimer();
+      remaining = seconds;
       update();
-      speak(startSeconds+"秒");
-      resumeHandler=onTick;
-      timer=setInterval(resumeHandler,1000);
-      setPause(true);
+      speak(seconds.toString());
+
+      timer = setInterval(tick, 1000);
     }
-  };
-  timer=setInterval(resumeHandler,1000);
-  setPause(true);
+  }, 1000);
 }
 
-/* ===== 预设模式 ===== */
-function modeSkills(){
-  start321(60,()=>{
-    remaining--;update();
-    if([50,40,30,25].includes(remaining))speak(remaining+"秒");
-    if(remaining<=20&&remaining>0)speak(""+remaining);
-    if(remaining<=0){clearT();speak("结束");setPause(false);}
-  });
-}
-function modeDriver(){
-  start321(105,()=>{
-    remaining--;update();
-    if([90,70,60,50,40,30,25,20].includes(remaining))speak(remaining+"秒");
-    if(remaining<=15&&remaining>0)speak(""+remaining);
-    if(remaining<=0){clearT();speak("结束");setPause(false);}
-  });
-}
-function modeAuto15(){
-  start321(15,()=>{
-    remaining--;update();
-    if(remaining<=0){clearT();setPause(false);}
-  });
+function tick() {
+  if (paused) return;
+  remaining--;
+  update();
+
+  if (remaining > 30 && remaining % 10 === 0) speak(remaining.toString());
+  else if (remaining <= 30 && remaining > 15 && remaining % 5 === 0) speak(remaining.toString());
+  else if (remaining <= 15 && remaining > 0) speak(remaining.toString());
+
+  if (remaining <= 0) {
+    clearTimer();
+    speak(lang === "zh" ? "结束" : "End");
+  }
 }
 
-/* ===== 自定义模式 ===== */
-function modeCustom(){
-  const val=parseInt(document.getElementById("customInput").value);
-  if(!val||val<=0)return alert("请输入有效秒数");
-  start321(val,()=>{
-    remaining--;update();
-
-    if(remaining>30 && remaining%10===0){
-      speak(remaining+"秒");
-    }
-    if(remaining<=30 && remaining>15 && remaining%5===0){
-      speak(remaining+"秒");
-    }
-    if(remaining<=15 && remaining>0){
-      speak(""+remaining);
-    }
-    if(remaining<=0){
-      clearT();
-      speak("结束");
-      setPause(false);
-    }
-  });
-}
+/* ---------- Buttons ---------- */
+btnSkills.onclick = () => start(60);
+btnDriver.onclick = () => start(105);
+btnAuto15.onclick = () => start(15);
+btnReset.onclick = () => { clearTimer(); remaining = 0; update(); };
+btnPause.onclick = () => paused = true;
+btnResume.onclick = () => paused = false;
+btnCustom.onclick = () => {
+  const v = parseInt(customInput.value);
+  if (!isNaN(v) && v > 0) start(v);
+};
 </script>
 </body>
 </html>
