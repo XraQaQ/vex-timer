@@ -1,770 +1,217 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VEX Timer</title>
-  <style>
-    :root{
-      --bg:#0b0f14;
-      --panel:#121824;
-      --panel2:#0f1520;
-      --text:#e8eefc;
-      --muted:#98a6c6;
-      --vex-red:#e11919;
-      --vex-red2:#ff2a2a;
-      --border:rgba(255,255,255,0.08);
-      --shadow: 0 12px 40px rgba(0,0,0,.35);
-      --radius:18px;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VEX Timer</title>
 
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      min-height:100vh;
-      background:
-        radial-gradient(1200px 600px at 20% 10%, rgba(225,25,25,.14), transparent 60%),
-        radial-gradient(900px 500px at 90% 20%, rgba(255,42,42,.10), transparent 60%),
-        linear-gradient(180deg, #070a0f 0%, var(--bg) 45%, #070a0f 100%);
-      color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:28px 18px;
-    }
-
-    .app{
-      width:min(980px, 100%);
-      display:grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap:18px;
-    }
-
-    @media (max-width: 860px){
-      .app{ grid-template-columns: 1fr; }
-    }
-
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-
-    .header{
-      padding:16px 18px;
-      border-bottom:1px solid var(--border);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      background: linear-gradient(90deg, rgba(225,25,25,.14), transparent 55%);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:0;
-    }
-
-    .badge{
-      width:36px; height:36px;
-      border-radius:10px;
-      background:
-        linear-gradient(135deg, rgba(225,25,25,.85), rgba(255,42,42,.55));
-      box-shadow: 0 10px 30px rgba(225,25,25,.25);
-      position:relative;
-      flex: 0 0 auto;
-    }
-    .badge:before{
-      content:"V";
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      letter-spacing:.02em;
-      color:#fff;
-      font-size:18px;
-      opacity:.95;
-    }
-
-    .titlewrap{ min-width:0; }
-    .title{
-      margin:0;
-      font-size:16px;
-      font-weight:800;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .subtitle{
-      margin:2px 0 0 0;
-      font-size:12px;
-      color:var(--muted);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .headright{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex: 0 0 auto;
-    }
-
-    .statuspill{
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      font-size:12px;
-      color:var(--muted);
-      display:flex;
-      align-items:center;
-      gap:8px;
-      background: rgba(18,24,36,.55);
-      flex: 0 0 auto;
-      min-width: 106px;
-      justify-content:center;
-    }
-    .dot{
-      width:8px; height:8px;
-      border-radius:999px;
-      background: rgba(152,166,198,.6);
-    }
-    .dot.live{ background: var(--vex-red2); box-shadow: 0 0 0 4px rgba(225,25,25,.18); }
-
-    .langbtn{
-      appearance:none;
-      border:1px solid var(--border);
-      background: rgba(18,24,36,.55);
-      color: var(--text);
-      padding:8px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:800;
-      cursor:pointer;
-      transition: background .2s ease, border-color .2s ease, transform .06s ease;
-      user-select:none;
-    }
-    .langbtn:hover{ background: rgba(18,24,36,.85); border-color: rgba(255,255,255,.14); }
-    .langbtn:active{ transform: translateY(1px); }
-
-    .main{
-      padding:20px 18px 18px;
-    }
-
-    .timebox{
-      background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.12));
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      padding:18px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      overflow:hidden;
-    }
-    .timebox:before{
-      content:"";
-      position:absolute;
-      inset:-40px -60px auto auto;
-      width:220px; height:220px;
-      background: radial-gradient(circle at 30% 30%, rgba(225,25,25,.30), transparent 60%);
-      transform: rotate(20deg);
-    }
-    #time{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size: clamp(54px, 7vw, 84px);
-      font-weight:900;
-      letter-spacing:.04em;
-      position:relative;
-      z-index:1;
-    }
-
-    .controls{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-
-    .btn{
-      appearance:none;
-      border:1px solid var(--border);
-      background: rgba(18,24,36,.6);
-      color: var(--text);
-      padding:12px 12px;
-      border-radius:14px;
-      font-size:14px;
-      font-weight:800;
-      cursor:pointer;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      user-select:none;
-    }
-    .btn:hover{ background: rgba(18,24,36,.85); border-color: rgba(255,255,255,.14); }
-    .btn:active{ transform: translateY(1px); }
-
-    .btn.primary{
-      border-color: rgba(225,25,25,.35);
-      background: linear-gradient(135deg, rgba(225,25,25,.85), rgba(255,42,42,.55));
-      box-shadow: 0 10px 28px rgba(225,25,25,.16);
-    }
-    .btn.primary:hover{ border-color: rgba(225,25,25,.55); }
-
-    .btn.ghost{
-      background: rgba(0,0,0,.18);
-    }
-
-    .btn:disabled{
-      opacity:.45;
-      cursor:not-allowed;
-    }
-
-    .side{
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-    }
-
-    .panel{
-      padding:18px;
-    }
-
-    .sectiontitle{
-      margin:0 0 10px 0;
-      font-size:13px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color: var(--muted);
-      font-weight:900;
-    }
-
-    .rule{
-      padding:12px 12px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background: rgba(15,21,32,.55);
-      margin-bottom:10px;
-    }
-    .rule h3{
-      margin:0 0 6px 0;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:.02em;
-    }
-    .rule ul{
-      margin:0;
-      padding-left:18px;
-      color: var(--muted);
-      font-size:13px;
-      line-height:1.45;
-    }
-
-    .minirow{
-      display:flex;
-      gap:10px;
-      margin-top:12px;
-    }
-    .minirow .btn{ width:100%; }
-
-    .footnote{
-      color: var(--muted);
-      font-size:12px;
-      line-height:1.45;
-      margin-top:10px;
-    }
-
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size:12px;
-      padding:2px 6px;
-      border:1px solid var(--border);
-      border-bottom-color: rgba(255,255,255,.18);
-      border-radius:8px;
-      background: rgba(0,0,0,.18);
-      color: var(--text);
-      display:inline-block;
-      margin: 0 2px;
-    }
-  </style>
+<style>
+:root{
+  --bg:#0b0f14;
+  --panel:#121824;
+  --text:#e8eefc;
+  --muted:#98a6c6;
+  --vex-red:#e11919;
+  --border:rgba(255,255,255,0.08);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#070a0f;
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  display:flex;
+  justify-content:center;
+  padding:24px;
+}
+.app{width:900px;max-width:100%}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+}
+h1{margin:0 0 12px 0;font-size:18px}
+#time{
+  font-size:72px;
+  font-weight:900;
+  text-align:center;
+  margin:20px 0;
+}
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.btn{
+  padding:12px;
+  font-size:14px;
+  font-weight:800;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#151b2a;
+  color:var(--text);
+  cursor:pointer;
+}
+.btn.primary{background:var(--vex-red)}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:10px;margin-top:10px}
+input{
+  background:#0f1522;
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--text);
+  padding:10px;
+  width:100%;
+}
+.small{font-size:12px;color:var(--muted)}
+</style>
 </head>
 
 <body>
-  <div class="app">
-    <div class="card">
-      <div class="header">
-        <div class="brand">
-          <div class="badge" aria-hidden="true"></div>
-          <div class="titlewrap">
-            <p class="title" id="uiTitle">VEX TIMER</p>
-            <p class="subtitle" id="uiSubtitle">语音报时 · 训练/比赛用</p>
-          </div>
-        </div>
+<div class="app">
+  <div class="card">
+    <h1>VEX TIMER</h1>
 
-        <div class="headright">
-          <button class="langbtn" id="langToggleBtn" onclick="toggleLang()">中文 / EN</button>
-          <div class="statuspill">
-            <span class="dot" id="statusDot"></span>
-            <span id="statusText">Idle</span>
-          </div>
-        </div>
-      </div>
+    <div id="time">0:00</div>
 
-      <div class="main">
-        <div class="timebox">
-          <div id="time">0:00</div>
-        </div>
-
-        <div class="controls">
-          <button class="btn primary" id="btnSkills" onclick="mode1()">Skills</button>
-          <button class="btn" id="btnAuto15" onclick="mode2Prep()">15秒自动</button>
-          <button class="btn primary" id="btnDriver" onclick="mode2Start()">Driver</button>
-          <button class="btn ghost" id="btnReset" onclick="resetAll()">重置</button>
-        </div>
-
-        <div class="minirow">
-          <button class="btn" id="pauseBtn" onclick="pauseTimer()" disabled>暂停</button>
-          <button class="btn" id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
-        </div>
-
-        <div class="footnote" id="uiFootnote">
-          说明：开始时播报 <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>，中途报时不加 3-2-1。浏览器第一次需要你点击按钮后才允许语音。
-        </div>
-      </div>
+    <div class="controls">
+      <button class="btn primary" onclick="modeSkills()">Skills</button>
+      <button class="btn primary" onclick="modeDriver()">Driver</button>
+      <button class="btn" onclick="modeAuto15()">15秒自动</button>
+      <button class="btn" onclick="resetAll()">重置</button>
     </div>
 
-    <div class="side">
-      <div class="card panel">
-        <p class="sectiontitle" id="uiRulesTitle">模式规则</p>
-
-        <div class="rule">
-          <h3 id="uiRuleSkillsTitle">Skills（1:00）</h3>
-          <ul id="uiRuleSkillsList"></ul>
-        </div>
-
-        <div class="rule">
-          <h3 id="uiRuleAuto15Title">15秒自动</h3>
-          <ul id="uiRuleAuto15List"></ul>
-        </div>
-
-        <div class="rule">
-          <h3 id="uiRuleDriverTitle">Driver（1:45）</h3>
-          <ul id="uiRuleDriverList"></ul>
-        </div>
-
-        <div class="footnote" id="uiPauseNote">
-          暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。继续会从冻结点恢复。
-        </div>
-      </div>
+    <div class="row">
+      <input id="customInput" type="number" min="1" placeholder="自定义秒数（如 120）">
+      <button class="btn primary" onclick="modeCustom()">Custom Start</button>
     </div>
+
+    <div class="row">
+      <button class="btn" id="pauseBtn" onclick="pauseTimer()" disabled>暂停</button>
+      <button class="btn" id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
+    </div>
+
+    <p class="small">
+      自定义规则：30秒前每10秒报时，30–15每5秒，15秒倒数
+    </p>
   </div>
+</div>
 
-  <script>
-    // ========= i18n =========
-    let lang = localStorage.getItem("vex_timer_lang") || "zh"; // 'zh' | 'en'
+<script>
+let timer=null, remaining=0, paused=false, resumeHandler=null;
 
-    const I18N = {
-      zh: {
-        title: "VEX TIMER",
-        subtitle: "语音报时 · 训练/比赛用",
-        toggle: "中文 / EN",
-        btnSkills: "Skills",
-        btnAuto15: "15秒自动",
-        btnDriver: "Driver",
-        btnReset: "重置",
-        btnPause: "暂停",
-        btnResume: "继续",
-        rulesTitle: "模式规则",
-        footnote: `说明：开始时播报 <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>，中途报时不加 3-2-1。浏览器第一次需要你点击按钮后才允许语音。`,
-        pauseNote: "暂停会冻结当前阶段（包含开始前 3-2-1、15秒自动、正式倒计时）。继续会从冻结点恢复。",
-        ruleSkillsTitle: "Skills（1:00）",
-        ruleSkills: [
-          "开始：3、2、1 → 报“60秒”",
-          "50、40 报时（前 30 秒每 10 秒）",
-          "30、25 报时（后 30 秒每 5 秒到 20 之前）",
-          "20 秒及以下逐秒倒数"
-        ],
-        ruleAuto15Title: "15秒自动",
-        ruleAuto15: [
-          "开始：3、2、1 → 自动开始 15 秒",
-          "15 秒阶段不报时（只倒计时显示）"
-        ],
-        ruleDriverTitle: "Driver（1:45）",
-        ruleDriver: [
-          "开始：3、2、1 → 报“1分45秒”",
-          "1:30、1:10、1:00 报时",
-          "60 以下每 10 秒（50、40），30 以下每 5 秒到 15 之前（30、25、20）",
-          "15 秒及以下逐秒倒数"
-        ],
-        status: {
-          idle: "Idle",
-          starting: "Starting",
-          running: "Running",
-          auto15: "Auto 15s",
-          paused: "Paused",
-          done: "Done"
-        },
-        speak: {
-          start60: "60秒",
-          start145: "1分45秒",
-          end: "结束",
-          num: (n) => String(n), // countdown numbers
-          seconds: (n) => `${n}秒`,
-          time: (sec) => {
-            if (sec >= 60) {
-              const m = Math.floor(sec / 60);
-              const s = sec % 60;
-              if (s === 0) return `${m}分钟`;
-              return `${m}分${s}秒`;
-            }
-            return `${sec}秒`;
-          }
-        },
-        ttsLang: "zh-CN",
-      },
-      en: {
-        title: "VEX TIMER",
-        subtitle: "Voice callouts · Practice/Match",
-        toggle: "中文 / EN",
-        btnSkills: "Skills",
-        btnAuto15: "Auto 15s",
-        btnDriver: "Driver",
-        btnReset: "Reset",
-        btnPause: "Pause",
-        btnResume: "Resume",
-        rulesTitle: "MODE RULES",
-        footnote: `Note: Only the start has <span class="kbd">3</span><span class="kbd">2</span><span class="kbd">1</span>. Mid callouts do NOT use 3-2-1. Your first click enables speech in most browsers.`,
-        pauseNote: "Pause freezes the current phase (start 3-2-1, Auto 15s, and running timers). Resume continues from the freeze point.",
-        ruleSkillsTitle: "Skills (1:00)",
-        ruleSkills: [
-          "Start: 3-2-1 → call “60 seconds”",
-          "Callouts at 50 and 40 seconds",
-          "Callouts at 30 and 25 seconds",
-          "From 20 seconds: spoken countdown"
-        ],
-        ruleAuto15Title: "Auto 15s",
-        ruleAuto15: [
-          "Start: 3-2-1 → automatically runs 15 seconds",
-          "No callouts during the 15-second phase (display only)"
-        ],
-        ruleDriverTitle: "Driver (1:45)",
-        ruleDriver: [
-          "Start: 3-2-1 → call “1 minute 45 seconds”",
-          "Callouts at 1:30, 1:10, 1:00",
-          "Then 50, 40, 30, 25, 20 seconds",
-          "From 15 seconds: spoken countdown"
-        ],
-        status: {
-          idle: "Idle",
-          starting: "Starting",
-          running: "Running",
-          auto15: "Auto 15s",
-          paused: "Paused",
-          done: "Done"
-        },
-        speak: {
-          start60: "60 seconds",
-          start145: "1 minute 45 seconds",
-          end: "End",
-          num: (n) => String(n),
-          seconds: (n) => `${n} seconds`,
-          time: (sec) => {
-            if (sec >= 60) {
-              const m = Math.floor(sec / 60);
-              const s = sec % 60;
-              if (s === 0) return `${m} minute${m === 1 ? "" : "s"}`;
-              return `${m} minute${m === 1 ? "" : "s"} ${s} seconds`;
-            }
-            return `${sec} seconds`;
-          }
-        },
-        ttsLang: "en-US",
-      }
-    };
+function speak(t){
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang="zh-CN";
+  speechSynthesis.speak(u);
+}
+function update(){
+  const m=Math.floor(remaining/60), s=remaining%60;
+  document.getElementById("time").innerText=`${m}:${s.toString().padStart(2,"0")}`;
+}
+function clearT(){ if(timer){clearInterval(timer);timer=null;} }
 
-    function applyLanguage() {
-      const L = I18N[lang];
+function setPause(p){
+  document.getElementById("pauseBtn").disabled=!p;
+  document.getElementById("resumeBtn").disabled=p;
+}
 
-      document.documentElement.lang = (lang === "zh") ? "zh-CN" : "en";
-      document.getElementById("uiTitle").innerText = L.title;
-      document.getElementById("uiSubtitle").innerText = L.subtitle;
-      document.getElementById("langToggleBtn").innerText = L.toggle;
+function resetAll(){
+  clearT();
+  paused=false;
+  remaining=0;
+  update();
+  setPause(false);
+  try{speechSynthesis.cancel()}catch{}
+}
 
-      document.getElementById("btnSkills").innerText = L.btnSkills;
-      document.getElementById("btnAuto15").innerText = L.btnAuto15;
-      document.getElementById("btnDriver").innerText = L.btnDriver;
-      document.getElementById("btnReset").innerText = L.btnReset;
-      document.getElementById("pauseBtn").innerText = L.btnPause;
-      document.getElementById("resumeBtn").innerText = L.btnResume;
+function pauseTimer(){
+  if(!timer)return;
+  clearT();
+  paused=true;
+  setPause(false);
+}
+function resumeTimer(){
+  if(!paused)return;
+  paused=false;
+  timer=setInterval(resumeHandler,1000);
+  setPause(true);
+}
 
-      document.getElementById("uiRulesTitle").innerText = L.rulesTitle;
-      document.getElementById("uiFootnote").innerHTML = L.footnote;
-      document.getElementById("uiPauseNote").innerText = L.pauseNote;
+function start321(startSeconds,onTick){
+  resetAll();
+  remaining=3;
+  update();
+  speak("3");
 
-      document.getElementById("uiRuleSkillsTitle").innerText = L.ruleSkillsTitle;
-      document.getElementById("uiRuleAuto15Title").innerText = L.ruleAuto15Title;
-      document.getElementById("uiRuleDriverTitle").innerText = L.ruleDriverTitle;
-
-      fillList("uiRuleSkillsList", L.ruleSkills);
-      fillList("uiRuleAuto15List", L.ruleAuto15);
-      fillList("uiRuleDriverList", L.ruleDriver);
-
-      // Refresh status label with current phase
-      refreshStatusLabel();
+  resumeHandler=function(){
+    remaining--;
+    update();
+    if(remaining===2)speak("2");
+    if(remaining===1)speak("1");
+    if(remaining<=0){
+      clearT();
+      remaining=startSeconds;
+      update();
+      speak(startSeconds+"秒");
+      resumeHandler=onTick;
+      timer=setInterval(resumeHandler,1000);
+      setPause(true);
     }
+  };
+  timer=setInterval(resumeHandler,1000);
+  setPause(true);
+}
 
-    function fillList(id, items) {
-      const ul = document.getElementById(id);
-      ul.innerHTML = "";
-      for (const text of items) {
-        const li = document.createElement("li");
-        li.textContent = text;
-        ul.appendChild(li);
-      }
+/* ===== 预设模式 ===== */
+function modeSkills(){
+  start321(60,()=>{
+    remaining--;update();
+    if([50,40,30,25].includes(remaining))speak(remaining+"秒");
+    if(remaining<=20&&remaining>0)speak(""+remaining);
+    if(remaining<=0){clearT();speak("结束");setPause(false);}
+  });
+}
+function modeDriver(){
+  start321(105,()=>{
+    remaining--;update();
+    if([90,70,60,50,40,30,25,20].includes(remaining))speak(remaining+"秒");
+    if(remaining<=15&&remaining>0)speak(""+remaining);
+    if(remaining<=0){clearT();speak("结束");setPause(false);}
+  });
+}
+function modeAuto15(){
+  start321(15,()=>{
+    remaining--;update();
+    if(remaining<=0){clearT();setPause(false);}
+  });
+}
+
+/* ===== 自定义模式 ===== */
+function modeCustom(){
+  const val=parseInt(document.getElementById("customInput").value);
+  if(!val||val<=0)return alert("请输入有效秒数");
+  start321(val,()=>{
+    remaining--;update();
+
+    if(remaining>30 && remaining%10===0){
+      speak(remaining+"秒");
     }
-
-    function toggleLang() {
-      lang = (lang === "zh") ? "en" : "zh";
-      localStorage.setItem("vex_timer_lang", lang);
-      applyLanguage();
+    if(remaining<=30 && remaining>15 && remaining%5===0){
+      speak(remaining+"秒");
     }
-
-    // ========= Timer Logic =========
-    let timer = null;
-    let remaining = 0;
-
-    let phase = 'idle';      // 'idle' | 'prep' | 'prestart' | 'running' | 'done'
-    let paused = false;
-
-    // handler used for resume
-    let resumeHandler = null;
-
-    // ===== UI status =====
-    function setStatusKey(statusKey, live) {
-      const L = I18N[lang];
-      document.getElementById("statusText").innerText = L.status[statusKey] || statusKey;
-      const dot = document.getElementById("statusDot");
-      dot.classList.toggle("live", !!live);
+    if(remaining<=15 && remaining>0){
+      speak(""+remaining);
     }
-
-    function refreshStatusLabel() {
-      // Map phase/paused to status key
-      if (paused) return setStatusKey("paused", true);
-      if (phase === "idle") return setStatusKey("idle", false);
-      if (phase === "prestart") return setStatusKey("starting", true);
-      if (phase === "prep") return setStatusKey("auto15", true);
-      if (phase === "running") return setStatusKey("running", true);
-      if (phase === "done") return setStatusKey("done", false);
-      setStatusKey("idle", false);
+    if(remaining<=0){
+      clearT();
+      speak("结束");
+      setPause(false);
     }
-
-    function setPauseResumeEnabled(canPause, canResume) {
-      document.getElementById("pauseBtn").disabled = !canPause;
-      document.getElementById("resumeBtn").disabled = !canResume;
-    }
-
-    // ===== Speech & Display =====
-    function speak(text) {
-      const msg = new SpeechSynthesisUtterance(text);
-      msg.lang = I18N[lang].ttsLang;
-      window.speechSynthesis.speak(msg);
-    }
-
-    function updateDisplay() {
-      const m = Math.floor(remaining / 60);
-      const s = remaining % 60;
-      document.getElementById("time").innerText =
-        `${m}:${s.toString().padStart(2, "0")}`;
-    }
-
-    function clearTimer() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    }
-
-    // ===== Pause / Resume / Reset =====
-    function pauseTimer() {
-      if (!timer) return;
-      clearTimer();
-      paused = true;
-      refreshStatusLabel();
-      setPauseResumeEnabled(false, true);
-    }
-
-    function resumeTimer() {
-      if (!paused || typeof resumeHandler !== "function") return;
-      paused = false;
-      setPauseResumeEnabled(true, false);
-      timer = setInterval(resumeHandler, 1000);
-      refreshStatusLabel();
-    }
-
-    function resetAll() {
-      clearTimer();
-      paused = false;
-      phase = "idle";
-      resumeHandler = null;
-      remaining = 0;
-      updateDisplay();
-      refreshStatusLabel();
-      setPauseResumeEnabled(false, false);
-      try { window.speechSynthesis.cancel(); } catch(e) {}
-    }
-
-    // ===== Start with 3-2-1 (for Skills / Driver) =====
-    function startWith321(startSeconds, startSpeakText, tickFn) {
-      resetAll();
-      phase = "prestart";
-      remaining = 3;
-      updateDisplay();
-      refreshStatusLabel();
-      setPauseResumeEnabled(true, false);
-
-      speak("3");
-
-      resumeHandler = function prestartTick() {
-        remaining--;
-        updateDisplay();
-
-        if (remaining === 2) speak("2");
-        if (remaining === 1) speak("1");
-
-        if (remaining <= 0) {
-          clearTimer();
-          phase = "running";
-          remaining = startSeconds;
-          updateDisplay();
-          speak(startSpeakText);
-
-          resumeHandler = function runningTick() { tickFn(); };
-
-          timer = setInterval(resumeHandler, 1000);
-          refreshStatusLabel();
-          setPauseResumeEnabled(true, false);
-        }
-      };
-
-      timer = setInterval(resumeHandler, 1000);
-    }
-
-    // ===== Auto 15s with 3-2-1 (NO speech during 15s) =====
-    function prepWith321(totalSeconds) {
-      resetAll();
-      phase = "prestart";
-      remaining = 3;
-      updateDisplay();
-      refreshStatusLabel();
-      setPauseResumeEnabled(true, false);
-
-      speak("3");
-
-      resumeHandler = function prestartTick() {
-        remaining--;
-        updateDisplay();
-
-        if (remaining === 2) speak("2");
-        if (remaining === 1) speak("1");
-
-        if (remaining <= 0) {
-          clearTimer();
-          phase = "prep";
-          remaining = totalSeconds;
-          updateDisplay();
-          refreshStatusLabel();
-
-          resumeHandler = function prepTick() {
-            remaining--;
-            updateDisplay();
-            refreshStatusLabel();
-
-            if (remaining <= 0) {
-              clearTimer();
-              phase = "idle";
-              refreshStatusLabel();
-              setPauseResumeEnabled(false, false);
-            }
-          };
-
-          timer = setInterval(resumeHandler, 1000);
-          setPauseResumeEnabled(true, false);
-        }
-      };
-
-      timer = setInterval(resumeHandler, 1000);
-    }
-
-    // ===== Modes =====
-    function mode1() { // Skills (1:00)
-      const S = I18N[lang].speak;
-      startWith321(60, S.start60, () => {
-        remaining--;
-        updateDisplay();
-        refreshStatusLabel();
-
-        if ([50, 40, 30, 25].includes(remaining)) {
-          speak(S.seconds(remaining));
-        }
-
-        if (remaining <= 20 && remaining > 0) {
-          speak(S.num(remaining));
-        }
-
-        if (remaining <= 0) {
-          clearTimer();
-          phase = "done";
-          refreshStatusLabel();
-          setPauseResumeEnabled(false, false);
-          speak(S.end);
-        }
-      });
-    }
-
-    function mode2Prep() { // Auto 15s
-      prepWith321(15);
-    }
-
-    function mode2Start() { // Driver (1:45)
-      const S = I18N[lang].speak;
-      startWith321(105, S.start145, () => {
-        remaining--;
-        updateDisplay();
-        refreshStatusLabel();
-
-        if ([90, 70, 60, 50, 40, 30, 25, 20].includes(remaining)) {
-          speak(S.time(remaining));
-        }
-
-        if (remaining <= 15 && remaining > 0) {
-          speak(S.num(remaining));
-        }
-
-        if (remaining <= 0) {
-          clearTimer();
-          phase = "done";
-          refreshStatusLabel();
-          setPauseResumeEnabled(false, false);
-          speak(S.end);
-        }
-      });
-    }
-
-    // init
-    resetAll();
-    applyLanguage();
-  </script>
+  });
+}
+</script>
 </body>
 </html>
