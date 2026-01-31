@@ -1,265 +1,208 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>VEX Timer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VEX Timer</title>
 
   <style>
-    body {
-      margin: 0;
-      background: radial-gradient(circle at top, #141a28, #05070d);
-      font-family: Inter, Arial, sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    :root{
+      --bg:#0b0f14;
+      --panel:#121824;
+      --text:#e8eefc;
+      --muted:#98a6c6;
+      --vex-red:#e11919;
+      --border:rgba(255,255,255,0.08);
+      --radius:18px;
     }
-
-    .card {
-      background: linear-gradient(180deg, #111827, #0b1020);
-      border-radius: 18px;
-      width: 520px;
-      padding: 26px 28px 30px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;
+      background:linear-gradient(180deg,#070a0f,var(--bg));
+      color:var(--text);
+      font-family:system-ui,-apple-system,BlinkMacSystemFont;
+      display:flex;align-items:center;justify-content:center;
     }
-
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .card{
+      width:min(900px,95%);
+      background:#121824;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:20px;
     }
-
-    .title {
-      font-weight: 800;
-      letter-spacing: .5px;
-      font-size: 20px;
+    h1{margin:0 0 10px 0}
+    #time{
+      font-size:80px;
+      font-weight:900;
+      text-align:center;
+      margin:20px 0;
+      font-family:monospace;
     }
-
-    .lang-btn {
-      border: none;
-      background: #1f2937;
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-weight: 700;
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    button,input{
+      font-size:16px;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#0f1520;
+      color:var(--text);
     }
-
-    .time {
-      text-align: center;
-      font-size: 72px;
-      font-weight: 900;
-      margin: 28px 0;
+    button.primary{
+      background:var(--vex-red);
+      border-color:var(--vex-red);
+      font-weight:700;
     }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    button {
-      flex: 1;
-      border: none;
-      border-radius: 10px;
-      padding: 14px 0;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .primary {
-      background: #e11d1d;
-      color: #fff;
-    }
-
-    .secondary {
-      background: #1f2937;
-      color: #e5e7eb;
-    }
-
-    .small {
-      padding: 10px 0;
-      font-size: 14px;
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: #0f172a;
-      color: #fff;
-      font-size: 14px;
-    }
-
-    .rule {
-      margin-top: 14px;
-      font-size: 12px;
-      opacity: .65;
-    }
+    button:disabled{opacity:.5}
+    .small{font-size:13px;color:var(--muted)}
+    .spacer{height:10px}
   </style>
 </head>
 
 <body>
-  <div class="card">
-    <div class="top">
-      <div class="title" id="title">VEX TIMER</div>
-      <button class="lang-btn" id="langBtn">中</button>
-    </div>
+<div class="card">
+  <h1>VEX TIMER</h1>
 
-    <div class="time" id="time">0:00</div>
+  <div id="time">0:00</div>
 
-    <div class="row">
-      <button class="primary" id="btnSkills"></button>
-      <button class="primary" id="btnDriver"></button>
-    </div>
-
-    <div class="row">
-      <button class="secondary small" id="btnAuto15"></button>
-      <button class="secondary small" id="btnReset"></button>
-    </div>
-
-    <div class="row">
-      <input id="customInput" placeholder="">
-      <button class="primary small" id="btnCustom"></button>
-    </div>
-
-    <div class="row">
-      <button class="secondary small" id="btnPause"></button>
-      <button class="secondary small" id="btnResume"></button>
-    </div>
-
-    <div class="rule" id="ruleText"></div>
+  <div class="row">
+    <button class="primary" onclick="modeSkills()">Skills</button>
+    <button onclick="modeAuto15()">15秒自动</button>
+    <button class="primary" onclick="modeDriver()">Driver</button>
+    <button onclick="resetAll()">重置</button>
   </div>
 
+  <div class="spacer"></div>
+
+  <div class="row">
+    <button id="pauseBtn" onclick="pauseTimer()" disabled>暂停</button>
+    <button id="resumeBtn" onclick="resumeTimer()" disabled>继续</button>
+  </div>
+
+  <div class="spacer"></div>
+
+  <!-- 自定义时间 -->
+  <div class="row">
+    <input id="customInput" type="number" min="1" placeholder="自定义秒数（如 120）">
+    <button onclick="startCustom()">开始自定义时间</button>
+  </div>
+
+  <p class="small">
+    固定报时规则：<br>
+    ＞30 秒：每 10 秒报一次 ｜ 30–15 秒：每 5 秒 ｜ ≤15 秒逐秒
+  </p>
+</div>
+
 <script>
-/* ---------- Language ---------- */
-let lang = "en";
+/* ========= 基础状态 ========= */
+let timer=null;
+let remaining=0;
+let paused=false;
+let resumeHandler=null;
 
-const TEXT = {
-  en: {
-    title: "VEX TIMER",
-    skills: "Skills",
-    driver: "Driver",
-    auto15: "15s Auto",
-    reset: "Reset",
-    custom: "Custom Start",
-    pause: "Pause",
-    resume: "Resume",
-    input: "Custom seconds (e.g. 120)",
-    rule: "Rule: >30s every 10s · 30–15 every 5s · last 15s countdown"
-  },
-  zh: {
-    title: "VEX 计时器",
-    skills: "技能赛",
-    driver: "手动赛",
-    auto15: "15秒自动",
-    reset: "重置",
-    custom: "自定义开始",
-    pause: "暂停",
-    resume: "继续",
-    input: "自定义秒数（如 120）",
-    rule: "规则：30秒前每10秒，30–15每5秒，15秒倒数"
-  }
-};
-
-function renderLang() {
-  const t = TEXT[lang];
-  title.textContent = t.title;
-  btnSkills.textContent = t.skills;
-  btnDriver.textContent = t.driver;
-  btnAuto15.textContent = t.auto15;
-  btnReset.textContent = t.reset;
-  btnCustom.textContent = t.custom;
-  btnPause.textContent = t.pause;
-  btnResume.textContent = t.resume;
-  customInput.placeholder = t.input;
-  ruleText.textContent = t.rule;
-  langBtn.textContent = lang === "en" ? "中" : "EN";
-}
-
-langBtn.onclick = () => {
-  lang = lang === "en" ? "zh" : "en";
-  renderLang();
-};
-
-renderLang();
-
-/* ---------- Timer ---------- */
-let timer = null;
-let remaining = 0;
-let paused = false;
-
-function speak(text) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang === "zh" ? "zh-CN" : "en-US";
+/* ========= 工具 ========= */
+function speak(t){
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang="zh-CN";
   speechSynthesis.speak(u);
 }
-
-function update() {
-  time.textContent =
-    Math.floor(remaining / 60) + ":" +
-    (remaining % 60).toString().padStart(2, "0");
+function update(){
+  const m=Math.floor(remaining/60);
+  const s=remaining%60;
+  document.getElementById("time").innerText=
+    `${m}:${s.toString().padStart(2,"0")}`;
+}
+function clearTimer(){
+  if(timer){clearInterval(timer);timer=null}
+}
+function setPause(canPause,canResume){
+  pauseBtn.disabled=!canPause;
+  resumeBtn.disabled=!canResume;
 }
 
-function clearTimer() {
-  clearInterval(timer);
-  timer = null;
-}
-
-function start(seconds) {
-  clearTimer();
-  paused = false;
-  remaining = 3;
-  update();
-  speak("3");
-
-  timer = setInterval(() => {
-    remaining--;
-    update();
-    if (remaining === 2) speak("2");
-    if (remaining === 1) speak("1");
-
-    if (remaining <= 0) {
-      clearTimer();
-      remaining = seconds;
-      update();
-      speak(seconds.toString());
-
-      timer = setInterval(tick, 1000);
-    }
-  }, 1000);
-}
-
-function tick() {
-  if (paused) return;
-  remaining--;
-  update();
-
-  if (remaining > 30 && remaining % 10 === 0) speak(remaining.toString());
-  else if (remaining <= 30 && remaining > 15 && remaining % 5 === 0) speak(remaining.toString());
-  else if (remaining <= 15 && remaining > 0) speak(remaining.toString());
-
-  if (remaining <= 0) {
-    clearTimer();
-    speak(lang === "zh" ? "结束" : "End");
+/* ========= 核心：统一固定报时规则 ========= */
+function fixedAnnounce(){
+  if(remaining>30 && remaining%10===0){
+    speak(`${remaining}秒`);
+  }
+  else if(remaining<=30 && remaining>15 && remaining%5===0){
+    speak(`${remaining}秒`);
+  }
+  else if(remaining<=15 && remaining>0){
+    speak(String(remaining));
   }
 }
 
-/* ---------- Buttons ---------- */
-btnSkills.onclick = () => start(60);
-btnDriver.onclick = () => start(105);
-btnAuto15.onclick = () => start(15);
-btnReset.onclick = () => { clearTimer(); remaining = 0; update(); };
-btnPause.onclick = () => paused = true;
-btnResume.onclick = () => paused = false;
-btnCustom.onclick = () => {
-  const v = parseInt(customInput.value);
-  if (!isNaN(v) && v > 0) start(v);
-};
+/* ========= 321 启动 ========= */
+function startWith321(startSeconds){
+  resetAll();
+  remaining=3;
+  update();
+  speak("3");
+  resumeHandler=function(){
+    remaining--;update();
+    if(remaining===2)speak("2");
+    if(remaining===1)speak("1");
+    if(remaining<=0){
+      clearTimer();
+      remaining=startSeconds;
+      update();
+      speak(`${startSeconds}秒`);
+      resumeHandler=runTick;
+      timer=setInterval(resumeHandler,1000);
+      setPause(true,false);
+    }
+  };
+  timer=setInterval(resumeHandler,1000);
+  setPause(true,false);
+}
+
+/* ========= 正式倒计时 ========= */
+function runTick(){
+  remaining--;
+  update();
+  fixedAnnounce();
+  if(remaining<=0){
+    clearTimer();
+    speak("结束");
+    setPause(false,false);
+  }
+}
+
+/* ========= 模式 ========= */
+function modeSkills(){ startWith321(60); }
+function modeDriver(){ startWith321(105); }
+function modeAuto15(){
+  startWith321(15);
+}
+
+/* ========= 自定义 ========= */
+function startCustom(){
+  const v=parseInt(customInput.value);
+  if(!v||v<=0)return;
+  startWith321(v);
+}
+
+/* ========= 控制 ========= */
+function pauseTimer(){
+  if(!timer)return;
+  clearTimer();
+  paused=true;
+  setPause(false,true);
+}
+function resumeTimer(){
+  if(!paused)return;
+  paused=false;
+  timer=setInterval(resumeHandler,1000);
+  setPause(true,false);
+}
+function resetAll(){
+  clearTimer();
+  paused=false;
+  remaining=0;
+  update();
+  setPause(false,false);
+  speechSynthesis.cancel();
+}
 </script>
 </body>
 </html>
