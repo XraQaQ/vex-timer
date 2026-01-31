@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VEX Timer</title>
 
+  <!-- ===== VEX 官方风格 UI（保持不变）===== -->
   <style>
     :root{
       --bg:#0b0f14;
@@ -17,11 +18,16 @@
     }
     *{box-sizing:border-box}
     body{
-      margin:0;min-height:100vh;
-      background:linear-gradient(180deg,#070a0f,var(--bg));
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(225,25,25,.14), transparent 60%),
+        linear-gradient(180deg,#070a0f,var(--bg));
       color:var(--text);
       font-family:system-ui,-apple-system,BlinkMacSystemFont;
-      display:flex;align-items:center;justify-content:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
     .card{
       width:min(900px,95%);
@@ -30,7 +36,20 @@
       border-radius:var(--radius);
       padding:20px;
     }
-    h1{margin:0 0 10px 0}
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .langbtn{
+      background:#0f1520;
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 12px;
+      color:var(--text);
+      cursor:pointer;
+      font-weight:700;
+    }
     #time{
       font-size:80px;
       font-weight:900;
@@ -50,7 +69,7 @@
     button.primary{
       background:var(--vex-red);
       border-color:var(--vex-red);
-      font-weight:700;
+      font-weight:800;
     }
     button:disabled{opacity:.5}
     .small{font-size:13px;color:var(--muted)}
@@ -60,15 +79,18 @@
 
 <body>
 <div class="card">
-  <h1>VEX TIMER</h1>
+  <div class="header">
+    <h2 id="uiTitle">VEX TIMER</h2>
+    <button class="langbtn" onclick="toggleLang()">中文 / EN</button>
+  </div>
 
   <div id="time">0:00</div>
 
   <div class="row">
-    <button class="primary" onclick="modeSkills()">Skills</button>
-    <button onclick="modeAuto15()">15秒自动</button>
-    <button class="primary" onclick="modeDriver()">Driver</button>
-    <button onclick="resetAll()">重置</button>
+    <button class="primary" onclick="modeSkills()" id="btnSkills">Skills</button>
+    <button onclick="modeAuto15()" id="btnAuto15">15秒自动</button>
+    <button class="primary" onclick="modeDriver()" id="btnDriver">Driver</button>
+    <button onclick="resetAll()" id="btnReset">重置</button>
   </div>
 
   <div class="spacer"></div>
@@ -80,60 +102,113 @@
 
   <div class="spacer"></div>
 
-  <!-- 自定义时间 -->
+  <!-- ✅ 新增：自定义时间 -->
   <div class="row">
-    <input id="customInput" type="number" min="1" placeholder="自定义秒数（如 120）">
-    <button onclick="startCustom()">开始自定义时间</button>
+    <input id="customInput" type="number" min="1" placeholder="自定义秒数">
+    <button onclick="startCustom()" id="btnCustom">开始自定义</button>
   </div>
 
-  <p class="small">
-    固定报时规则：<br>
-    ＞30 秒：每 10 秒报一次 ｜ 30–15 秒：每 5 秒 ｜ ≤15 秒逐秒
+  <p class="small" id="ruleText">
+    固定报时规则：＞30 秒每 10 秒 ｜ 30–15 秒每 5 秒 ｜ ≤15 秒逐秒
   </p>
 </div>
 
 <script>
-/* ========= 基础状态 ========= */
+/* ========= 中英文系统（保留） ========= */
+let lang = localStorage.getItem("vex_lang") || "zh";
+
+const I18N = {
+  zh:{
+    skills:"Skills",
+    auto15:"15秒自动",
+    driver:"Driver",
+    reset:"重置",
+    pause:"暂停",
+    resume:"继续",
+    custom:"开始自定义",
+    rule:"固定报时规则：＞30 秒每 10 秒 ｜ 30–15 秒每 5 秒 ｜ ≤15 秒逐秒",
+    start60:"60秒",
+    start145:"1分45秒",
+    end:"结束",
+    sec:n=>`${n}秒`,
+    num:n=>`${n}`,
+    tts:"zh-CN"
+  },
+  en:{
+    skills:"Skills",
+    auto15:"Auto 15s",
+    driver:"Driver",
+    reset:"Reset",
+    pause:"Pause",
+    resume:"Resume",
+    custom:"Start Custom",
+    rule:"Fixed rules: >30s every 10s | 30–15s every 5s | ≤15s countdown",
+    start60:"60 seconds",
+    start145:"1 minute 45 seconds",
+    end:"End",
+    sec:n=>`${n} seconds`,
+    num:n=>`${n}`,
+    tts:"en-US"
+  }
+};
+
+function applyLang(){
+  const L=I18N[lang];
+  btnSkills.innerText=L.skills;
+  btnAuto15.innerText=L.auto15;
+  btnDriver.innerText=L.driver;
+  btnReset.innerText=L.reset;
+  pauseBtn.innerText=L.pause;
+  resumeBtn.innerText=L.resume;
+  btnCustom.innerText=L.custom;
+  ruleText.innerText=L.rule;
+}
+function toggleLang(){
+  lang = lang==="zh"?"en":"zh";
+  localStorage.setItem("vex_lang",lang);
+  applyLang();
+}
+
+/* ========= 计时核心 ========= */
 let timer=null;
 let remaining=0;
 let paused=false;
 let resumeHandler=null;
 
-/* ========= 工具 ========= */
 function speak(t){
   const u=new SpeechSynthesisUtterance(t);
-  u.lang="zh-CN";
+  u.lang=I18N[lang].tts;
   speechSynthesis.speak(u);
 }
 function update(){
   const m=Math.floor(remaining/60);
   const s=remaining%60;
-  document.getElementById("time").innerText=
-    `${m}:${s.toString().padStart(2,"0")}`;
+  time.innerText=`${m}:${s.toString().padStart(2,"0")}`;
 }
 function clearTimer(){
   if(timer){clearInterval(timer);timer=null}
 }
-function setPause(canPause,canResume){
-  pauseBtn.disabled=!canPause;
-  resumeBtn.disabled=!canResume;
+function setPause(p,r){
+  pauseBtn.disabled=!p;
+  resumeBtn.disabled=!r;
 }
 
-/* ========= 核心：统一固定报时规则 ========= */
+/* ========= ✅ 固定报时规则（新增核心） ========= */
 function fixedAnnounce(){
+  const L=I18N[lang];
   if(remaining>30 && remaining%10===0){
-    speak(`${remaining}秒`);
+    speak(L.sec(remaining));
   }
   else if(remaining<=30 && remaining>15 && remaining%5===0){
-    speak(`${remaining}秒`);
+    speak(L.sec(remaining));
   }
   else if(remaining<=15 && remaining>0){
-    speak(String(remaining));
+    speak(L.num(remaining));
   }
 }
 
-/* ========= 321 启动 ========= */
-function startWith321(startSeconds){
+/* ========= 321 启动（保持） ========= */
+function startWith321(startSeconds,startSpeak){
   resetAll();
   remaining=3;
   update();
@@ -146,7 +221,7 @@ function startWith321(startSeconds){
       clearTimer();
       remaining=startSeconds;
       update();
-      speak(`${startSeconds}秒`);
+      speak(startSpeak);
       resumeHandler=runTick;
       timer=setInterval(resumeHandler,1000);
       setPause(true,false);
@@ -163,23 +238,25 @@ function runTick(){
   fixedAnnounce();
   if(remaining<=0){
     clearTimer();
-    speak("结束");
+    speak(I18N[lang].end);
     setPause(false,false);
   }
 }
 
 /* ========= 模式 ========= */
-function modeSkills(){ startWith321(60); }
-function modeDriver(){ startWith321(105); }
-function modeAuto15(){
-  startWith321(15);
+function modeSkills(){
+  startWith321(60,I18N[lang].start60);
 }
-
-/* ========= 自定义 ========= */
+function modeDriver(){
+  startWith321(105,I18N[lang].start145);
+}
+function modeAuto15(){
+  startWith321(15,I18N[lang].sec(15));
+}
 function startCustom(){
   const v=parseInt(customInput.value);
   if(!v||v<=0)return;
-  startWith321(v);
+  startWith321(v,I18N[lang].sec(v));
 }
 
 /* ========= 控制 ========= */
@@ -203,6 +280,8 @@ function resetAll(){
   setPause(false,false);
   speechSynthesis.cancel();
 }
+
+applyLang();
 </script>
 </body>
 </html>
